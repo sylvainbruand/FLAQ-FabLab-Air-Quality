@@ -1,0 +1,39 @@
+# Local secrets and machine-specific configuration
+**/arduino_secrets.h
+**/server_secrets.bat
+**/.env
+**/.env.*
+!**/.env.example
+**/local.properties
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.venv/
+
+# Android / Gradle / IDE
+**/.gradle/
+**/.idea/
+**/build/
+**/*.iml
+
+# Runtime measurements and backups
+**/*all_sensors*.csv
+**/*all_sensors*.xlsx
+**/all_log.csv
+**/backups/
+**/*.cleanup.tmp
+capteur  individuel/donn*/
+
+# Temporary lock files created by Office and SolidWorks
+**/~$*
+
+# Arduino build output
+**/.arduinoIDE/
+**/build.options.json
+
+# Operating-system files
+**/Thumbs.db
+**/.DS_Store
+Desktop.ini

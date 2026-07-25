@@ -1,0 +1,4 @@
+arduino_secrets.h
+server_secrets.bat
+__pycache__/
+*.pyc
