@@ -26,6 +26,9 @@
 **/*.cleanup.tmp
 capteur  individuel/donn*/
 
+# Local archive of individual sensor prototypes
+capteur  individuel/
+
 # Temporary lock files created by Office and SolidWorks
 **/~$*
 
