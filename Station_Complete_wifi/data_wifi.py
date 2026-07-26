@@ -16,7 +16,8 @@ from waitress import serve
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_FILE = BASE_DIR / "all_sensors_log.csv"
+DATA_FILE_PREFIX = "all_sensors_log"
+LEGACY_DATA_FILE = BASE_DIR / f"{DATA_FILE_PREFIX}.csv"
 BACKUP_DIR = BASE_DIR / "backups"
 BACKUP_INFO_FILE = BACKUP_DIR / "last_backup.txt"
 
@@ -41,11 +42,29 @@ latest_data = {}
 latest_received_at = None
 
 
-def ensure_csv_file():
+def weekly_data_file(moment=None):
+    """Retourne le fichier de la semaine ISO courante (lundi à dimanche)."""
+    iso_year, iso_week, _ = (moment or datetime.now()).isocalendar()
+    return BASE_DIR / f"{DATA_FILE_PREFIX}_{iso_year}-W{iso_week:02d}.csv"
+
+
+def data_files():
+    """Liste l'ancien journal puis les journaux hebdomadaires dans l'ordre."""
+    files = []
+    if LEGACY_DATA_FILE.exists():
+        files.append(LEGACY_DATA_FILE)
+    files.extend(sorted(BASE_DIR.glob(f"{DATA_FILE_PREFIX}_????-W??.csv")))
+    return files
+
+
+def ensure_csv_file(data_file=None):
     """Crée le journal et son en-tête sans dépendre du dossier de lancement."""
-    if not DATA_FILE.exists() or DATA_FILE.stat().st_size == 0:
-        with DATA_FILE.open("w", newline="", encoding="utf-8") as handle:
+    data_file = data_file or weekly_data_file()
+    if not data_file.exists() or data_file.stat().st_size == 0:
+        with data_file.open("w", newline="", encoding="utf-8") as handle:
             csv.writer(handle).writerow(HEADERS)
+        print(f"[OK] Nouveau fichier CSV hebdomadaire : {data_file.name}", flush=True)
+    return data_file
 
 
 def parse_measurement(line):
@@ -76,7 +95,8 @@ def parse_measurement(line):
 
 def append_measurement(values):
     with csv_lock:
-        with DATA_FILE.open("a", newline="", encoding="utf-8") as handle:
+        data_file = ensure_csv_file()
+        with data_file.open("a", newline="", encoding="utf-8") as handle:
             csv.writer(handle).writerow(values)
 
 
@@ -84,6 +104,7 @@ def check_and_backup():
     """Effectue au maximum une sauvegarde tous les sept jours."""
     BACKUP_DIR.mkdir(exist_ok=True)
     now = datetime.now()
+    data_file = weekly_data_file(now)
     do_backup = True
 
     if BACKUP_INFO_FILE.exists():
@@ -96,9 +117,9 @@ def check_and_backup():
         except (OSError, ValueError):
             do_backup = True
 
-    if do_backup and DATA_FILE.exists():
-        destination = BACKUP_DIR / f"backup_{now:%Y-%m-%d}_{DATA_FILE.name}"
-        shutil.copy2(DATA_FILE, destination)
+    if do_backup and data_file.exists():
+        destination = BACKUP_DIR / f"backup_{now:%Y-%m-%d}_{data_file.name}"
+        shutil.copy2(data_file, destination)
         BACKUP_INFO_FILE.write_text(now.strftime("%Y-%m-%d %H:%M:%S"), encoding="utf-8")
         print(f"Sauvegarde automatique effectuée : {destination.name}", flush=True)
 
@@ -107,31 +128,35 @@ def load_latest_measurement():
     global latest_data, latest_received_at
     ensure_csv_file()
     last_valid = None
+    latest_file = None
     with csv_lock:
-        with DATA_FILE.open("r", newline="", encoding="utf-8-sig") as handle:
-            for row in csv.reader(handle):
-                if row == HEADERS:
-                    continue
-                try:
-                    last_valid = parse_measurement(",".join(row))
-                except ValueError:
-                    continue
+        for data_file in data_files():
+            with data_file.open("r", newline="", encoding="utf-8-sig") as handle:
+                for row in csv.reader(handle):
+                    if row == HEADERS:
+                        continue
+                    try:
+                        last_valid = parse_measurement(",".join(row))
+                        latest_file = data_file
+                    except ValueError:
+                        continue
     latest_data = last_valid or {}
-    if latest_data:
-        latest_received_at = datetime.fromtimestamp(DATA_FILE.stat().st_mtime)
+    if latest_data and latest_file:
+        latest_received_at = datetime.fromtimestamp(latest_file.stat().st_mtime)
 
 
 def read_history(limit):
     history = deque(maxlen=limit)
     with csv_lock:
-        with DATA_FILE.open("r", newline="", encoding="utf-8-sig") as handle:
-            for row in csv.reader(handle):
-                if row == HEADERS:
-                    continue
-                try:
-                    history.append(parse_measurement(",".join(row)))
-                except ValueError:
-                    continue
+        for data_file in data_files():
+            with data_file.open("r", newline="", encoding="utf-8-sig") as handle:
+                for row in csv.reader(handle):
+                    if row == HEADERS:
+                        continue
+                    try:
+                        history.append(parse_measurement(",".join(row)))
+                    except ValueError:
+                        continue
     return list(history)
 
 

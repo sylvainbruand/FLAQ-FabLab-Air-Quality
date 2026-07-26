@@ -784,6 +784,7 @@
 
         // --- I18N LOGIC ---
         let currentLang = localStorage.getItem('ease_lang') || 'fr';
+        let latestSensorData = null;
 
         function changeLanguage(lang) {
             currentLang = lang;
@@ -801,6 +802,10 @@
                 }
             });
 
+            if (latestSensorData) {
+                updateCardThresholds(latestSensorData);
+            }
+
             if (currentTitle) {
                 // Update history title if open
             }
@@ -814,6 +819,7 @@
                 const data = await response.json();
                 
                 if (Object.keys(data).length > 0) {
+                    latestSensorData = data;
                     const ageSeconds = Number(data['_age_seconds']);
                     const isFresh = Number.isFinite(ageSeconds) && ageSeconds <= 30;
                     document.getElementById('connection-dot').classList.toggle('active', isFresh);
@@ -1043,15 +1049,432 @@
             }
         };
 
+        const thresholdUi = {
+            fr: {
+                heading: '⚠️ Seuils de Référence',
+                statuses: { good: 'Bon', acceptable: 'Acceptable', warning: 'Dégradé', alert: 'Alerte', danger: 'Danger', raw: 'Indice brut' }
+            },
+            en: {
+                heading: '⚠️ Reference Thresholds',
+                statuses: { good: 'Good', acceptable: 'Acceptable', warning: 'Poor', alert: 'Alert', danger: 'Danger', raw: 'Raw index' }
+            },
+            de: {
+                heading: '⚠️ Referenzwerte',
+                statuses: { good: 'Gut', acceptable: 'Akzeptabel', warning: 'Beeinträchtigt', alert: 'Alarm', danger: 'Gefahr', raw: 'Rohindex' }
+            },
+            ro: {
+                heading: '⚠️ Praguri de referință',
+                statuses: { good: 'Bun', acceptable: 'Acceptabil', warning: 'Degradat', alert: 'Alertă', danger: 'Pericol', raw: 'Indice brut' }
+            }
+        };
+
+        const thresholdTranslations = {
+            en: {
+                co2: {
+                    title: 'CO₂ — Carbon dioxide',
+                    subtitle: 'Indoor air-stuffiness indicator',
+                    objective: 'Indicates ventilation quality. A high CO₂ level signals the accumulation of other pollutants (viruses, allergens and VOCs) when the air is not renewed sufficiently.',
+                    levels: [
+                        { label: 'Outdoor air (reference)' },
+                        { label: 'Good indoor air quality' },
+                        { label: 'Acceptable' },
+                        { label: 'HCSP / ASHRAE management threshold' },
+                        { label: 'Poor — ventilation required' },
+                        { label: 'HCSP alert threshold (public buildings) / Symptoms' },
+                        { label: 'Occupational exposure limit' }
+                    ]
+                },
+                pm25: {
+                    title: 'PM2.5 — Very fine particles',
+                    subtitle: 'Priority pollutant — premature mortality',
+                    objective: 'Instantaneous sensor reading. The health reference values below apply to annual or 24-hour averages and must not be applied directly to an isolated measurement.',
+                    badge: 'Instantaneous',
+                    levels: [
+                        { label: 'WHO PM2.5 — Annual' },
+                        { label: 'WHO PM2.5 — Daily (24 h)' },
+                        { label: 'EU PM2.5 — Annual', detail: '25 µg/m³ (→10 in 2030)' },
+                        { label: 'French PM2.5 information threshold' },
+                        { label: 'French PM2.5 alert threshold' }
+                    ]
+                },
+                pm10: {
+                    title: 'PM10 — Fine particles',
+                    subtitle: 'Respiratory pollutant — reaches the bronchi',
+                    objective: 'Instantaneous sensor reading. The health reference values below apply to a 24-hour average and must not be applied directly to an isolated measurement.',
+                    badge: 'Instantaneous',
+                    levels: [
+                        { label: 'WHO PM10 — Daily' },
+                        { label: 'EU PM10 — Daily' },
+                        { label: 'French PM10 alert threshold' }
+                    ]
+                },
+                no2: {
+                    title: 'Raw NO₂ index — Multichannel V2',
+                    subtitle: 'Qualitative detection, without a concentration unit',
+                    objective: 'This channel tracks relative changes after warm-up. It does not directly provide µg/m³ and must not be compared with regulatory NO₂ thresholds.',
+                    badge: 'Raw index',
+                    levels: [{ label: 'Raw qualitative reading', detail: 'Compare only with a local baseline' }]
+                },
+                hcho: {
+                    title: 'Analog estimate — Formaldehyde (HCHO)',
+                    subtitle: 'Value dependent on WSP2110 calibration',
+                    objective: 'The conversion uses the R0 resistance configured in the firmware. Until the sensor has been individually calibrated, this value must not be used to draw a health conclusion.',
+                    badge: 'Estimate',
+                    levels: [
+                        { label: 'WHO — Long-term formaldehyde' },
+                        { label: 'ANSES health reference value — Long term' },
+                        { label: 'French public buildings limit (since 2023)' },
+                        { label: 'French public buildings — Long-term target' }
+                    ]
+                },
+                sgp40: {
+                    title: 'VOC Index — SGP40',
+                    subtitle: 'Dynamic indoor pollutant trend score',
+                    objective: 'Continuous analysis of volatile organic compounds relative to the 24-hour average.',
+                    levels: [
+                        { label: 'Good / Normal air', detail: '< 120 Idx (100 = Reference)' },
+                        { label: 'Moderate pollution' },
+                        { label: 'High pollution' }
+                    ]
+                },
+                tvoc: {
+                    title: 'TVOC (Volatile Organic Compounds) — SGP30',
+                    subtitle: 'Estimated total VOC concentration',
+                    objective: 'Overall measurement of volatile organic molecules in indoor air.',
+                    levels: [
+                        { label: 'Clean air' },
+                        { label: 'Moderate pollution' },
+                        { label: 'High pollution' }
+                    ]
+                },
+                temp: {
+                    title: 'Ambient Temperature',
+                    subtitle: 'Indoor thermal comfort',
+                    objective: 'Maintaining an optimal temperature for occupied spaces.',
+                    levels: [
+                        { label: 'Cool' },
+                        { label: 'Ideal comfort' },
+                        { label: 'Warm' },
+                        { label: 'Very warm' }
+                    ]
+                },
+                hum: {
+                    title: 'Relative Humidity',
+                    subtitle: 'Indoor relative humidity level',
+                    objective: 'Helps prevent dry mucous membranes and fungal growth.',
+                    levels: [
+                        { label: 'Dry air' },
+                        { label: 'Ideal humidity' },
+                        { label: 'Humid air' }
+                    ]
+                },
+                pres: {
+                    title: 'Atmospheric Pressure',
+                    subtitle: 'Barometric air pressure (hPa)',
+                    objective: 'Weather observation and tracking of air masses.',
+                    levels: [{ label: 'Standard pressure', detail: '1013.25 hPa (Average pressure)' }]
+                },
+                etoh: {
+                    title: 'Ethanol (EtOH)',
+                    subtitle: 'Qualitative index — Multichannel Gas V2',
+                    objective: 'Relative detection of alcohol vapours, hand sanitiser and disinfectants. The displayed value is raw.',
+                    badge: 'Raw index',
+                    levels: [{ label: 'Raw qualitative reading', detail: 'No concentration unit' }]
+                },
+                voc_multi: {
+                    title: 'VOC (Multigas)',
+                    subtitle: 'Qualitative index — Multichannel Gas V2',
+                    objective: 'Raw measurement for tracking relative changes in organic compounds.',
+                    badge: 'Raw index',
+                    levels: [{ label: 'Raw qualitative reading', detail: 'No concentration unit' }]
+                },
+                co: {
+                    title: 'Carbon Monoxide (CO)',
+                    subtitle: 'Qualitative index — Multichannel Gas V2',
+                    objective: 'Relative detection of combustion-related changes. This sensor is not a substitute for a certified CO safety detector.',
+                    badge: 'Raw index',
+                    levels: [{ label: 'Raw qualitative reading', detail: 'No concentration unit' }]
+                }
+            },
+            de: {
+                co2: {
+                    title: 'CO₂ — Kohlendioxid',
+                    subtitle: 'Indikator für unzureichenden Luftaustausch',
+                    objective: 'Zeigt die Lüftungsqualität an. Ein hoher CO₂-Wert weist bei unzureichendem Luftaustausch auf die Ansammlung weiterer Schadstoffe (Viren, Allergene und VOC) hin.',
+                    levels: [
+                        { label: 'Außenluft (Referenz)' },
+                        { label: 'Gute Innenraumluftqualität' },
+                        { label: 'Akzeptabel' },
+                        { label: 'HCSP-/ASHRAE-Handlungsschwelle' },
+                        { label: 'Beeinträchtigt — unbedingt lüften' },
+                        { label: 'HCSP-Alarmschwelle (öffentliche Gebäude) / Symptome' },
+                        { label: 'Arbeitsplatzgrenzwert' }
+                    ]
+                },
+                pm25: {
+                    title: 'PM2.5 — Sehr feine Partikel',
+                    subtitle: 'Prioritärer Schadstoff — vorzeitige Sterblichkeit',
+                    objective: 'Momentanwert des Sensors. Die folgenden Gesundheitsrichtwerte gelten für Jahres- oder 24-Stunden-Mittelwerte und dürfen nicht direkt auf eine Einzelmessung angewendet werden.',
+                    badge: 'Momentanwert',
+                    levels: [
+                        { label: 'WHO PM2.5 — Jahresmittel' },
+                        { label: 'WHO PM2.5 — Tagesmittel (24 h)' },
+                        { label: 'EU PM2.5 — Jahresmittel', detail: '25 µg/m³ (→10 im Jahr 2030)' },
+                        { label: 'Französische PM2.5-Informationsschwelle' },
+                        { label: 'Französische PM2.5-Alarmschwelle' }
+                    ]
+                },
+                pm10: {
+                    title: 'PM10 — Feine Partikel',
+                    subtitle: 'Atemwegsschadstoff — gelangt bis in die Bronchien',
+                    objective: 'Momentanwert des Sensors. Die folgenden Gesundheitsrichtwerte gelten für einen 24-Stunden-Mittelwert und dürfen nicht direkt auf eine Einzelmessung angewendet werden.',
+                    badge: 'Momentanwert',
+                    levels: [
+                        { label: 'WHO PM10 — Tagesmittel' },
+                        { label: 'EU PM10 — Tagesmittel' },
+                        { label: 'Französische PM10-Alarmschwelle' }
+                    ]
+                },
+                no2: {
+                    title: 'NO₂-Rohindex — Multichannel V2',
+                    subtitle: 'Qualitative Erkennung ohne Konzentrationseinheit',
+                    objective: 'Dieser Kanal erfasst relative Änderungen nach der Aufwärmphase. Er liefert keine direkten µg/m³-Werte und darf nicht mit gesetzlichen NO₂-Grenzwerten verglichen werden.',
+                    badge: 'Rohindex',
+                    levels: [{ label: 'Qualitativer Rohwert', detail: 'Nur mit einem lokalen Ausgangswert vergleichen' }]
+                },
+                hcho: {
+                    title: 'Analoge Schätzung — Formaldehyd (HCHO)',
+                    subtitle: 'Wert abhängig von der Kalibrierung des WSP2110',
+                    objective: 'Die Umrechnung verwendet den in der Firmware eingestellten R0-Widerstand. Vor einer individuellen Sensorkalibrierung darf aus diesem Wert keine gesundheitliche Schlussfolgerung gezogen werden.',
+                    badge: 'Schätzung',
+                    levels: [
+                        { label: 'WHO — Formaldehyd, Langzeitwert' },
+                        { label: 'ANSES-Gesundheitsrichtwert — Langzeit' },
+                        { label: 'Frankreich, öffentliche Gebäude (seit 2023)' },
+                        { label: 'Frankreich, öffentliche Gebäude — Langzeitziel' }
+                    ]
+                },
+                sgp40: {
+                    title: 'VOC-Index — SGP40',
+                    subtitle: 'Dynamischer Trendwert für Innenraumschadstoffe',
+                    objective: 'Kontinuierliche Analyse flüchtiger organischer Verbindungen im Verhältnis zum 24-Stunden-Mittelwert.',
+                    levels: [
+                        { label: 'Gute / normale Luft', detail: '< 120 Idx (100 = Referenz)' },
+                        { label: 'Mäßige Belastung' },
+                        { label: 'Hohe Belastung' }
+                    ]
+                },
+                tvoc: {
+                    title: 'TVOC (flüchtige organische Verbindungen) — SGP30',
+                    subtitle: 'Geschätzte Gesamt-VOC-Konzentration',
+                    objective: 'Gesamtmessung flüchtiger organischer Moleküle in der Innenraumluft.',
+                    levels: [
+                        { label: 'Saubere Luft' },
+                        { label: 'Mäßige Belastung' },
+                        { label: 'Hohe Belastung' }
+                    ]
+                },
+                temp: {
+                    title: 'Raumtemperatur',
+                    subtitle: 'Thermischer Komfort im Innenraum',
+                    objective: 'Aufrechterhaltung einer optimalen Temperatur in genutzten Räumen.',
+                    levels: [
+                        { label: 'Kühl' },
+                        { label: 'Idealer Komfort' },
+                        { label: 'Warm' },
+                        { label: 'Sehr warm' }
+                    ]
+                },
+                hum: {
+                    title: 'Relative Luftfeuchtigkeit',
+                    subtitle: 'Relative Feuchte der Innenraumluft',
+                    objective: 'Hilft, trockenen Schleimhäuten und Pilzwachstum vorzubeugen.',
+                    levels: [
+                        { label: 'Trockene Luft' },
+                        { label: 'Ideale Luftfeuchtigkeit' },
+                        { label: 'Feuchte Luft' }
+                    ]
+                },
+                pres: {
+                    title: 'Atmosphärischer Luftdruck',
+                    subtitle: 'Barometrischer Luftdruck (hPa)',
+                    objective: 'Wetterbeobachtung und Verfolgung von Luftmassen.',
+                    levels: [{ label: 'Standardluftdruck', detail: '1013.25 hPa (Mittlerer Luftdruck)' }]
+                },
+                etoh: {
+                    title: 'Ethanol (EtOH)',
+                    subtitle: 'Qualitativer Index — Multichannel Gas V2',
+                    objective: 'Relative Erkennung von Alkoholdämpfen, Handdesinfektionsmitteln und Desinfektionsmitteln. Der angezeigte Wert ist ein Rohwert.',
+                    badge: 'Rohindex',
+                    levels: [{ label: 'Qualitativer Rohwert', detail: 'Keine Konzentrationseinheit' }]
+                },
+                voc_multi: {
+                    title: 'VOC (Multigas)',
+                    subtitle: 'Qualitativer Index — Multichannel Gas V2',
+                    objective: 'Rohmessung zur Beobachtung relativer Veränderungen organischer Verbindungen.',
+                    badge: 'Rohindex',
+                    levels: [{ label: 'Qualitativer Rohwert', detail: 'Keine Konzentrationseinheit' }]
+                },
+                co: {
+                    title: 'Kohlenmonoxid (CO)',
+                    subtitle: 'Qualitativer Index — Multichannel Gas V2',
+                    objective: 'Relative Erkennung verbrennungsbedingter Veränderungen. Dieser Sensor ersetzt keinen zertifizierten CO-Warnmelder.',
+                    badge: 'Rohindex',
+                    levels: [{ label: 'Qualitativer Rohwert', detail: 'Keine Konzentrationseinheit' }]
+                }
+            },
+            ro: {
+                co2: {
+                    title: 'CO₂ — Dioxid de carbon',
+                    subtitle: 'Indicator al aerului insuficient ventilat',
+                    objective: 'Indică eficiența ventilației. Un nivel ridicat de CO₂ semnalează acumularea altor poluanți (virusuri, alergeni și COV) atunci când aerul nu este reînnoit suficient.',
+                    levels: [
+                        { label: 'Aer exterior (referință)' },
+                        { label: 'Calitate bună a aerului interior' },
+                        { label: 'Acceptabil' },
+                        { label: 'Prag de gestionare HCSP / ASHRAE' },
+                        { label: 'Degradat — aerisire obligatorie' },
+                        { label: 'Prag de alertă HCSP (clădiri publice) / Simptome' },
+                        { label: 'Limită de expunere profesională' }
+                    ]
+                },
+                pm25: {
+                    title: 'PM2.5 — Particule foarte fine',
+                    subtitle: 'Poluant prioritar — mortalitate prematură',
+                    objective: 'Citire instantanee a senzorului. Valorile sanitare de mai jos se aplică mediilor anuale sau pe 24 de ore și nu trebuie aplicate direct unei măsurători izolate.',
+                    badge: 'Instantaneu',
+                    levels: [
+                        { label: 'OMS PM2.5 — Medie anuală' },
+                        { label: 'OMS PM2.5 — Medie zilnică (24 h)' },
+                        { label: 'UE PM2.5 — Medie anuală', detail: '25 µg/m³ (→10 în 2030)' },
+                        { label: 'Prag francez de informare PM2.5' },
+                        { label: 'Prag francez de alertă PM2.5' }
+                    ]
+                },
+                pm10: {
+                    title: 'PM10 — Particule fine',
+                    subtitle: 'Poluant respirator — ajunge până la bronhii',
+                    objective: 'Citire instantanee a senzorului. Valorile sanitare de mai jos se aplică unei medii pe 24 de ore și nu trebuie aplicate direct unei măsurători izolate.',
+                    badge: 'Instantaneu',
+                    levels: [
+                        { label: 'OMS PM10 — Medie zilnică' },
+                        { label: 'UE PM10 — Medie zilnică' },
+                        { label: 'Prag francez de alertă PM10' }
+                    ]
+                },
+                no2: {
+                    title: 'Indice brut NO₂ — Multichannel V2',
+                    subtitle: 'Detecție calitativă, fără unitate de concentrație',
+                    objective: 'Acest canal urmărește variațiile relative după încălzire. Nu furnizează direct valori în µg/m³ și nu trebuie comparat cu pragurile legale pentru NO₂.',
+                    badge: 'Indice brut',
+                    levels: [{ label: 'Citire calitativă brută', detail: 'Comparați numai cu o valoare de bază locală' }]
+                },
+                hcho: {
+                    title: 'Estimare analogică — Formaldehidă (HCHO)',
+                    subtitle: 'Valoare dependentă de calibrarea WSP2110',
+                    objective: 'Conversia utilizează rezistența R0 configurată în firmware. Până la calibrarea individuală a senzorului, această valoare nu trebuie folosită pentru a formula o concluzie privind sănătatea.',
+                    badge: 'Estimare',
+                    levels: [
+                        { label: 'OMS — Formaldehidă pe termen lung' },
+                        { label: 'Valoare sanitară ANSES — Termen lung' },
+                        { label: 'Franța, clădiri publice (din 2023)' },
+                        { label: 'Franța, clădiri publice — Obiectiv pe termen lung' }
+                    ]
+                },
+                sgp40: {
+                    title: 'Indice COV — SGP40',
+                    subtitle: 'Scor dinamic al evoluției poluanților interiori',
+                    objective: 'Analiză continuă a compușilor organici volatili în raport cu media pe 24 de ore.',
+                    levels: [
+                        { label: 'Aer bun / normal', detail: '< 120 Idx (100 = Referință)' },
+                        { label: 'Poluare moderată' },
+                        { label: 'Poluare ridicată' }
+                    ]
+                },
+                tvoc: {
+                    title: 'TVOC (compuși organici volatili) — SGP30',
+                    subtitle: 'Concentrație totală estimată de COV',
+                    objective: 'Măsurare globală a moleculelor organice volatile din aerul interior.',
+                    levels: [
+                        { label: 'Aer curat' },
+                        { label: 'Poluare moderată' },
+                        { label: 'Poluare ridicată' }
+                    ]
+                },
+                temp: {
+                    title: 'Temperatură ambientală',
+                    subtitle: 'Confort termic interior',
+                    objective: 'Menținerea unei temperaturi optime în spațiile ocupate.',
+                    levels: [
+                        { label: 'Răcoros' },
+                        { label: 'Confort ideal' },
+                        { label: 'Cald' },
+                        { label: 'Foarte cald' }
+                    ]
+                },
+                hum: {
+                    title: 'Umiditate relativă',
+                    subtitle: 'Nivelul umidității relative din interior',
+                    objective: 'Ajută la prevenirea uscării mucoaselor și a dezvoltării fungilor.',
+                    levels: [
+                        { label: 'Aer uscat' },
+                        { label: 'Umiditate ideală' },
+                        { label: 'Aer umed' }
+                    ]
+                },
+                pres: {
+                    title: 'Presiune atmosferică',
+                    subtitle: 'Presiunea barometrică a aerului (hPa)',
+                    objective: 'Observații meteorologice și urmărirea maselor de aer.',
+                    levels: [{ label: 'Presiune standard', detail: '1013.25 hPa (Presiune medie)' }]
+                },
+                etoh: {
+                    title: 'Etanol (EtOH)',
+                    subtitle: 'Indice calitativ — Multichannel Gas V2',
+                    objective: 'Detecție relativă a vaporilor de alcool, gelurilor hidroalcoolice și dezinfectanților. Valoarea afișată este brută.',
+                    badge: 'Indice brut',
+                    levels: [{ label: 'Citire calitativă brută', detail: 'Fără unitate de concentrație' }]
+                },
+                voc_multi: {
+                    title: 'COV (multigaz)',
+                    subtitle: 'Indice calitativ — Multichannel Gas V2',
+                    objective: 'Măsurare brută pentru urmărirea variațiilor relative ale compușilor organici.',
+                    badge: 'Indice brut',
+                    levels: [{ label: 'Citire calitativă brută', detail: 'Fără unitate de concentrație' }]
+                },
+                co: {
+                    title: 'Monoxid de carbon (CO)',
+                    subtitle: 'Indice calitativ — Multichannel Gas V2',
+                    objective: 'Detecție relativă a variațiilor asociate arderii. Acest senzor nu înlocuiește un detector de siguranță CO certificat.',
+                    badge: 'Indice brut',
+                    levels: [{ label: 'Citire calitativă brută', detail: 'Fără unitate de concentrație' }]
+                }
+            }
+        };
+
+        function getLocalizedThresholdConfig(key) {
+            const base = thresholdConfigs[key];
+            if (!base) return null;
+            const localized = thresholdTranslations[currentLang]?.[key] || {};
+            return {
+                ...base,
+                ...localized,
+                levels: base.levels.map((level, index) => ({
+                    ...level,
+                    ...(localized.levels?.[index] || {})
+                }))
+            };
+        }
+
         function openInfoModal(event, key) {
             if (event) event.stopPropagation();
-            const cfg = thresholdConfigs[key];
+            const cfg = getLocalizedThresholdConfig(key);
             if (!cfg) return;
 
             document.getElementById('info-modal-title').innerText = cfg.title;
             let html = `<p style="color:var(--accent-blue); font-weight:600; margin-bottom:0.5rem;">${cfg.subtitle}</p>`;
             html += `<p style="margin-bottom:1.5rem;">${cfg.objective}</p>`;
-            html += `<h4 style="color:#fff; margin-bottom:0.5rem;">⚠️ Seuils de Référence</h4>`;
+            html += `<h4 style="color:#fff; margin-bottom:0.5rem;">${thresholdUi[currentLang]?.heading || thresholdUi.fr.heading}</h4>`;
             html += `<table class="thresh-table"><tbody>`;
             for (let lvl of cfg.levels) {
                 html += `<tr>
@@ -1097,7 +1520,7 @@
             mappings.forEach(m => {
                 const card = document.getElementById(m.cardId);
                 const badge = document.getElementById(m.badgeId);
-                const cfg = thresholdConfigs[m.cfgKey];
+                const cfg = getLocalizedThresholdConfig(m.cfgKey);
                 if (!card || !cfg || isNaN(m.val)) return;
 
                 const statusClass = cfg.eval(m.val);
@@ -1106,7 +1529,7 @@
 
                 if (badge) {
                     badge.className = 'status-badge status-' + statusClass;
-                    const labelsMap = { 'good': 'Bon', 'acceptable': 'Acceptable', 'warning': 'Dégradé', 'alert': 'Alerte', 'danger': 'Danger', 'raw': 'Indice brut' };
+                    const labelsMap = thresholdUi[currentLang]?.statuses || thresholdUi.fr.statuses;
                     badge.innerText = cfg.badge || labelsMap[statusClass] || statusClass;
                 }
             });
