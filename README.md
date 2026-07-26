@@ -26,13 +26,6 @@ Arduino reçoit les trames et les transmet au serveur par USB.
 - Serveur : `Station_complete_lora/data_lora.py`
 - Installation : `Station_complete_lora/PROCEDURE_INSTALLATION_Lora.md`
 
-### LoRa autonome
-
-Cette variante héberge le dashboard directement sur un Arduino récepteur avec
-stockage sur carte SD, sans serveur Python.
-
-- Sources : `station_complete_lora_no_python/`
-
 ## Dashboard
 
 Les versions Python proposent :
@@ -155,15 +148,9 @@ capteurs et un récepteur LoRa relié en USB au PC.
 Si le récepteur est sur `COM5`, double-cliquer directement sur
 `lancer_serveur_lora.bat`.
 
-Pour utiliser un autre port, lancer le serveur depuis PowerShell :
+Pour utiliser un autre port,modifier le fichier data_lora.py ligne 33 :
 
-```powershell
-cd ".\Station_complete_lora"
-$env:EASE_SERIAL_PORT = "COM7"
-.\lancer_serveur_lora.ps1
-```
-
-Remplacer `COM7` par le port réellement affiché sur le nouvel ordinateur. Le
+Remplacer `COM7` par le port réellement affiché sur le nouvel ordinateur(voir avec ide arduino avec le recepteur Lora branché en USB). Le
 débit par défaut est `115200` bauds ; il peut être remplacé avec la variable
 `EASE_SERIAL_BAUD` si le firmware est configuré différemment.
 

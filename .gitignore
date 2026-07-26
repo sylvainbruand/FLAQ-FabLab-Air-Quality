@@ -29,6 +29,9 @@ capteur  individuel/donn*/
 # Local archive of individual sensor prototypes
 capteur  individuel/
 
+# Local archive of the standalone LoRa variant
+station_complete_lora_no_python/
+
 # Temporary lock files created by Office and SolidWorks
 **/~$*
 

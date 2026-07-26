@@ -43,9 +43,10 @@
         @keyframes pulse { 0% { transform: scale(1) translate(0, 0); } 100% { transform: scale(1.1) translate(2%, 2%); } }
 
         .lang-selector { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; }
-        .lang-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; opacity: 0.5; transition: all 0.2s; }
+        .lang-btn { display: inline-flex; align-items: center; justify-content: center; padding: 3px; background: none; border: 1px solid transparent; border-radius: 5px; cursor: pointer; opacity: 0.5; transition: all 0.2s; }
+        .flag-icon { display: block; width: 30px; height: 20px; border-radius: 2px; box-shadow: 0 0 0 1px rgba(255,255,255,0.25); }
         .lang-btn:hover { transform: scale(1.2); }
-        .lang-btn.active { opacity: 1; transform: scale(1.2); filter: drop-shadow(0 0 5px rgba(255,255,255,0.5)); }
+        .lang-btn.active { opacity: 1; transform: scale(1.2); border-color: rgba(255,255,255,0.45); filter: drop-shadow(0 0 5px rgba(255,255,255,0.5)); }
 
         .main-header { width: 90%; max-width: 1200px; position: relative; display: flex; align-items: center; justify-content: center; margin-top: 3rem; margin-bottom: 2rem; text-align: center; }
         .header-logo { position: absolute; left: 0; top: 50%; transform: translateY(-50%); height: 90px; max-width: 180px; object-fit: contain; border-radius: 8px; background: rgba(255,255,255,0.1); padding: 5px; }
@@ -179,10 +180,39 @@
     <div class="ambient-light"></div>
     
     <div class="lang-selector">
-        <button class="lang-btn" onclick="changeLanguage('fr')" id="lang-fr">🇫🇷</button>
-        <button class="lang-btn" onclick="changeLanguage('en')" id="lang-en">🇬🇧</button>
-        <button class="lang-btn" onclick="changeLanguage('de')" id="lang-de">🇩🇪</button>
-        <button class="lang-btn" onclick="changeLanguage('ro')" id="lang-ro">🇷🇴</button>
+        <button type="button" class="lang-btn" onclick="changeLanguage('fr')" id="lang-fr" aria-label="Français" title="Français">
+            <svg class="flag-icon" viewBox="0 0 3 2" aria-hidden="true">
+                <rect width="1" height="2" x="0" fill="#0055a4"/>
+                <rect width="1" height="2" x="1" fill="#ffffff"/>
+                <rect width="1" height="2" x="2" fill="#ef4135"/>
+            </svg>
+        </button>
+        <button type="button" class="lang-btn" onclick="changeLanguage('en')" id="lang-en" aria-label="English" title="English">
+            <svg class="flag-icon" viewBox="0 0 60 30" aria-hidden="true">
+                <clipPath id="gb-flag-clip-wifi"><rect width="60" height="30" rx="1"/></clipPath>
+                <g clip-path="url(#gb-flag-clip-wifi)">
+                    <rect width="60" height="30" fill="#012169"/>
+                    <path d="M0 0L60 30M60 0L0 30" stroke="#ffffff" stroke-width="6"/>
+                    <path d="M0 0L60 30M60 0L0 30" stroke="#c8102e" stroke-width="3"/>
+                    <path d="M30 0V30M0 15H60" stroke="#ffffff" stroke-width="10"/>
+                    <path d="M30 0V30M0 15H60" stroke="#c8102e" stroke-width="6"/>
+                </g>
+            </svg>
+        </button>
+        <button type="button" class="lang-btn" onclick="changeLanguage('de')" id="lang-de" aria-label="Deutsch" title="Deutsch">
+            <svg class="flag-icon" viewBox="0 0 5 3" aria-hidden="true">
+                <rect width="5" height="1" y="0" fill="#000000"/>
+                <rect width="5" height="1" y="1" fill="#dd0000"/>
+                <rect width="5" height="1" y="2" fill="#ffce00"/>
+            </svg>
+        </button>
+        <button type="button" class="lang-btn" onclick="changeLanguage('ro')" id="lang-ro" aria-label="Română" title="Română">
+            <svg class="flag-icon" viewBox="0 0 3 2" aria-hidden="true">
+                <rect width="1" height="2" x="0" fill="#002b7f"/>
+                <rect width="1" height="2" x="1" fill="#fcd116"/>
+                <rect width="1" height="2" x="2" fill="#ce1126"/>
+            </svg>
+        </button>
     </div>
 
     <header class="main-header">
