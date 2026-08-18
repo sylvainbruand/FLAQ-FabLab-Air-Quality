@@ -1,0 +1,6 @@
+config.h
+.arduino/
+*.bin
+*.elf
+*.map
+.arduino/

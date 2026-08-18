@@ -1,287 +1,160 @@
-# EASE — Station de qualité de l’air
+# EASE XIAO — station autonome de qualité de l’air
 
-EASE est une station environnementale multicapteurs basée sur Arduino UNO R4.
-Elle mesure notamment la température, l’humidité, la pression, le CO₂, les
-particules PM1/PM2.5/PM10, les COV et plusieurs indices de gaz.
+Projet Arduino pour **Seeed Studio XIAO ESP32S3**. La carte acquiert les
+capteurs, affiche les mesures sur OLED, enregistre l’historique sur microSD et
+héberge elle-même un dashboard accessible depuis un téléphone ou un ordinateur.
 
-## Architectures
+## Fonctions incluses
 
-### Wi‑Fi + serveur Python
+- actualisation des mesures toutes les 10 secondes ;
+- lecture du SGP40 toutes les secondes avec compensation DHT20 ;
+- trois graphiques avec axes indépendants ;
+- moyenne glissante PM2.5 sur 24 heures ;
+- indice intérieur EASE du vert au rouge ;
+- alarme confirmée sur buzzer passif au niveau rouge ;
+- journal persistant des dépassements avec durée, moyenne et maximum ;
+- synthèse quotidienne et export CSV depuis le dashboard ;
+- horodatage par RTC Grove PCF85063 ;
+- correction NTP automatique lorsque le réseau donne accès à Internet ;
+- point d’accès `EASE-XIAO` si aucun Wi-Fi n’est configuré ou disponible ;
+- reprise de l’historique des dernières 24 heures après redémarrage ;
+- navigation manuelle entre les quatre pages OLED avec le bouton Grove ;
+- extinction de l’OLED après 20 secondes sans appui et réveil automatique ;
+- déclaration manuelle d’une ventilation avec un second bouton Grove ;
+- signalement de la ventilation sur le dashboard ;
+- bandes temporelles claires sur les graphes pendant les périodes ventilées.
 
-La station envoie une trame CSV toutes les dix secondes par HTTP. Le serveur
-Flask/Waitress valide les 23 champs, conserve l’historique et fournit le
-dashboard sur le réseau local.
+## Matériel
 
-- Firmware : `Station_Complete_wifi/Station_Complete_wifi.ino`
-- Serveur : `Station_Complete_wifi/data_wifi.py`
-- Installation : `Station_Complete_wifi/PROCEDURE_INSTALLATION_WIFI.md`
+| Fonction | Référence | Connexion |
+|---|---|---|
+| Carte | Seeed Studio XIAO ESP32S3 | — |
+| Hub | Grove 8-Channel I²C Hub TCA9548A | `D4/SDA`, `D5/SCL`, adresse `0x70` |
+| CO₂ | SCD30 | I²C `0x61` |
+| Particules | HM3301 | I²C `0x40` |
+| VOC | SGP40 | I²C `0x59` |
+| HCHO indicatif | Grove HCHO WSP2110 | analogique `D0`, via pont diviseur |
+| Température/humidité | DHT20 | I²C `0x38` |
+| Horloge | RTC Grove PCF85063 | I²C `0x51` |
+| Affichage | OLED SSD1306 128×64 | I²C `0x3C` |
+| Alarme | Grove Passive Buzzer 107020109 | `D1` |
+| Navigation OLED | Grove Button (P) 111020000 | port `D7 / UART` |
+| Ventilation | Grove Button (P) 111020000 | port `D0 / A0` |
+| Stockage | Adafruit MicroSD Breakout+ 254 | SPI, CS sur `D2` |
 
-### LoRa + passerelle Python
+Le câblage détaillé se trouve dans
+[ease_xiao/CABLAGE.md](ease_xiao/CABLAGE.md).
 
-Un émetteur collecte les mesures et les transmet en LoRa 868 MHz. Un second
-Arduino reçoit les trames et les transmet au serveur par USB.
+Au démarrage, le firmware ouvre automatiquement les huit canaux du TCA9548A.
+Cette configuration est possible car chaque capteur utilise une adresse I²C
+différente. Elle se règle avec `EASE_I2C_MUX_*` dans `config.example.h`.
 
-- Émetteur : `Station_complete_lora/Station_Emetteur/`
-- Récepteur : `Station_complete_lora/Station_Recepteur/`
-- Serveur : `Station_complete_lora/data_lora.py`
-- Installation : `Station_complete_lora/PROCEDURE_INSTALLATION_Lora.md`
+## Préparation de l’Arduino IDE
 
-## Dashboard
-
-Les versions Python proposent :
-
-- valeurs en direct et indicateur de fraîcheur ;
-- historique graphique limité et sous-échantillonné ;
-- interface responsive et multilingue ;
-- PWA avec cache local ;
-- endpoint de santé `/api/health`.
-
-Les sorties du Grove Multichannel Gas Sensor V2 sont présentées comme des
-indices qualitatifs bruts. Elles ne sont pas assimilées à des concentrations
-réglementaires.
-
-## Installation sur un nouvel ordinateur Windows
-
-Les versions LoRa et Wi‑Fi utilisent le même dashboard, mais pas le même mode
-de transmission. Suivre uniquement le guide correspondant à la station à
-installer.
-
-> Les deux serveurs utilisent le port TCP `5000`. Ne pas lancer les versions
-> LoRa et Wi‑Fi en même temps sur le même ordinateur.
-
-### Préparation commune
-
-1. Copier le projet complet sur le nouvel ordinateur, par exemple dans
-   `C:\EASE`, ou le récupérer avec Git. Si le projet est cloné avec Git,
-   installer également [Git LFS](https://git-lfs.com/) puis exécuter
-   `git lfs pull` dans le dossier du projet.
-2. Installer [Python 3 pour Windows](https://www.python.org/downloads/windows/).
-   Pendant l'installation, cocher **Add Python to PATH**.
-3. Vérifier Python dans PowerShell :
-
-   ```powershell
-   py -3 --version
-   ```
-
-4. Installer [Arduino IDE 2](https://www.arduino.cc/en/software).
-5. Dans le gestionnaire de cartes de l'IDE Arduino, installer le paquet
-   **Arduino UNO R4 Boards**.
-6. Dans le gestionnaire de bibliothèques, installer les bibliothèques utilisées
-   par la station :
-
+1. Installer le paquet de cartes **esp32 by Espressif Systems**.
+2. Sélectionner **XIAO_ESP32S3**.
+3. Activer la PSRAM en mode **OPI PSRAM**.
+4. Sélectionner une taille Flash de **8 MB**.
+5. Installer les bibliothèques :
    - U8g2 ;
-   - Grove - Laser PM2.5 Sensor HM3301 ;
-   - DHT20 ;
-   - Adafruit BME680, Adafruit SGP30 et Adafruit SGP40 ;
-   - SparkFun SCD30 ;
-   - Grove Multichannel Gas Sensor V2 ;
-   - RadioHead pour la version LoRa uniquement.
+   - Adafruit SGP40 Sensor, avec ses dépendances ;
+   - SparkFun SCD30 Arduino Library ;
+   - DHT20 de Rob Tillaart.
 
-   La bibliothèque `SD` est fournie avec l'environnement Arduino.
+Le HM3301 est lu directement par le firmware via `Wire`, afin d’éviter
+l’incompatibilité du type `u32` présente dans la bibliothèque Seeed 1.0.2 avec
+les versions ESP32 récentes. En cas de trame incomplète ou de checksum invalide,
+la lecture est retentée trois fois et le capteur est automatiquement replacé en
+mode I2C. Les concentrations utilisées sont les valeurs « environnement
+atmosphérique » du HM3301.
 
-7. Si la compilation signale `u32 has not been declared`, ouvrir :
+Les bibliothèques `WiFi`, `WebServer`, `ESPmDNS`, `SD`, `SPI` et `Wire` sont
+fournies par le paquet ESP32.
 
-   ```text
-   Documents\Arduino\libraries\Grove_-_Laser_PM2.5_Sensor_HM3301\src\Seeed_HM330X.h
-   ```
+## Configuration Wi-Fi
 
-   Ajouter après les lignes `#include` :
+Le projet fonctionne immédiatement sans identifiants : la carte crée le réseau
+`EASE-XIAO`, protégé par le mot de passe `ease-air`. Une fois connecté à ce
+réseau, ouvrir `http://192.168.4.1`.
 
-   ```cpp
-   typedef uint32_t u32;
-   typedef uint16_t u16;
-   typedef uint8_t u8;
-   ```
+Pour connecter la station au réseau local :
 
-### Guide pas à pas — station LoRa
+1. copier `config.h.example` sous le nom `config.h` ;
+2. renseigner le nom et le mot de passe Wi-Fi ;
+3. téléverser à nouveau le programme.
 
-La version LoRa utilise deux Arduino UNO R4 WiFi : un émetteur relié aux
-capteurs et un récepteur LoRa relié en USB au PC.
+Le dashboard devient alors accessible à l’adresse IP affichée sur l’OLED et,
+si le réseau l’autorise, à `http://ease-xiao.local`.
 
-#### 1. Préparer et téléverser l'émetteur
+`config.h` est ignoré par Git pour ne pas publier le mot de passe.
 
-1. Brancher les capteurs et le module LoRa de l'émetteur. Le module LoRa doit
-   être connecté au port **UART** du shield Grove.
-2. Ouvrir
-   `Station_complete_lora\Station_Emetteur\Station_Emetteur.ino`.
-3. Dans l'IDE Arduino, sélectionner **Arduino UNO R4 WiFi**, puis le port COM de
-   la carte.
-4. Pour régler l'horloge RTC, ajouter temporairement dans `setup()` un appel
-   avec la date et l'heure actuelles :
+## Carte microSD
 
-   ```cpp
-   forcerHeureRTC(2026, 7, 26, 12, 0, 0);
-   ```
+Utiliser une microSD High Endurance de 32 Go formatée en FAT32. La station crée :
 
-5. Téléverser une première fois, supprimer ou commenter immédiatement cet
-   appel, puis téléverser une seconde fois. Sans cette seconde étape, l'horloge
-   reviendrait à la même date après chaque redémarrage.
+- `/data/AAAAMMJJ.csv` : mesures d’une journée ;
+- `/events.csv` : dépassements terminés.
 
-#### 2. Préparer et téléverser le récepteur
+La fenêtre glissante est maintenue en PSRAM. Au redémarrage, les fichiers du
+jour courant et du jour précédent sont relus afin de reconstruire les dernières
+24 heures, la moyenne PM2.5 et les périodes de ventilation. La colonne
+`ventilation` vaut `1` lorsque la fenêtre ou la porte a été déclarée ouverte.
 
-1. Brancher le second module LoRa au port **UART** de l'autre shield Grove.
-2. Ouvrir
-   `Station_complete_lora\Station_Recepteur\Station_Recepteur.ino`.
-3. Sélectionner **Arduino UNO R4 WiFi** et le port COM du récepteur.
-4. Téléverser le programme.
-5. Laisser ensuite ce récepteur connecté en USB au PC qui hébergera le serveur.
+## Seuils
 
-#### 3. Installer le serveur Python LoRa
+Tous les seuils se trouvent dans `config.example.h` et peuvent être redéfinis
+dans `config.h`. L’indice global correspond au paramètre instantané le plus
+défavorable parmi CO₂, VOC, HCHO estimé, PM2.5 et PM10.
 
-1. Ouvrir PowerShell dans le dossier du projet.
-2. Exécuter :
+Une alerte ou un événement nécessite trois mesures consécutives au-dessus du
+seuil. Le retour utilise un seuil plus bas et trois confirmations, ce qui évite
+les oscillations autour d’une limite.
 
-   ```powershell
-   cd ".\Station_complete_lora"
-   py -3 -m venv .venv
-   .\.venv\Scripts\python.exe -m pip install --upgrade pip
-   .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-   ```
+Le seuil de la moyenne PM2.5 sur 24 heures produit un événement distinct. Il
+n’est activé que lorsque la station dispose d’au moins 23 heures d’historique.
 
-3. Dans l'IDE Arduino ou le Gestionnaire de périphériques Windows, relever le
-   port COM du récepteur, par exemple `COM5`.
-4. Fermer le moniteur série de l'IDE Arduino : un seul programme peut ouvrir le
-   port série à la fois.
+Ces seuils constituent un indicateur pédagogique EASE de qualité de l’air
+intérieur ; ils ne remplacent pas un dispositif réglementaire ou certifié.
 
-#### 4. Configurer le port COM et démarrer
+## Particularités du WSP2110
 
-Si le récepteur est sur `COM5`, double-cliquer directement sur
-`lancer_serveur_lora.bat`.
+Le WSP2110 est désactivé par défaut avec `EASE_WSP2110_ENABLED 0`. Dans cet
+état, D0 n'est pas lu, le dashboard affiche « non installé », le HCHO est
+ignoré par l'indice et aucune alerte HCHO n'est créée. Quand le capteur et son
+pont diviseur sont prêts, définir `EASE_WSP2110_ENABLED 1` dans `config.h`.
 
-Pour utiliser un autre port,modifier le fichier data_lora.py ligne 33 :
+Le WSP2110 est un capteur MOS sensible à plusieurs gaz et solvants. La valeur
+« HCHO estimé » en ppm sert donc à suivre une tendance après étalonnage ; ce
+n’est pas une mesure sélective ou certifiée du formaldéhyde. Le capteur demande
+au moins 120 heures de préchauffage avant son étalonnage initial.
 
-Remplacer `COM7` par le port réellement affiché sur le nouvel ordinateur(voir avec ide arduino avec le recepteur Lora branché en USB). Le
-débit par défaut est `115200` bauds ; il peut être remplacé avec la variable
-`EASE_SERIAL_BAUD` si le firmware est configuré différemment.
+Le module Grove fonctionne en 5 V alors que l’entrée analogique du XIAO est en
+3,3 V. Sa sortie doit obligatoirement passer par le pont 10 kΩ / 20 kΩ décrit
+dans `ease_xiao/CABLAGE.md`. La constante `EASE_WSP2110_R0_RATIO` doit ensuite
+être ajustée dans `config.h` avec la valeur obtenue en air propre stabilisé. Le
+moniteur série affiche `WSP_Rs` et `ADC` pour faciliter cette opération.
 
-#### 5. Vérifier le fonctionnement
+## API embarquée
 
-1. Attendre le message `Connecté au récepteur LoRa`.
-2. Ouvrir [http://localhost:5000](http://localhost:5000).
-3. Vérifier l'état technique sur
-   [http://localhost:5000/api/health](http://localhost:5000/api/health).
-4. Allumer l'émetteur et vérifier que les mesures se mettent à jour.
-5. Pour arrêter le serveur, revenir dans son terminal et appuyer sur
-   `Ctrl+C`.
+| Route | Rôle |
+|---|---|
+| `/` | dashboard |
+| `/api/live` | dernière mesure et état technique |
+| `/api/history?since=...&max=900` | historique sous-échantillonné |
+| `/api/events?max=200` | journal des dépassements |
+| `/api/events.csv` | téléchargement CSV |
+| `/api/health` | mémoire et disponibilité du serveur |
 
-En cas d'erreur `Accès refusé` sur le port série, fermer le moniteur série et
-toute autre instance du serveur. En cas d'erreur `Port COM introuvable`,
-contrôler à nouveau le numéro attribué au récepteur.
+## Organisation du dépôt
 
-Le guide LoRa détaillé reste disponible dans
-[`Station_complete_lora/PROCEDURE_INSTALLATION_Lora.md`](Station_complete_lora/PROCEDURE_INSTALLATION_Lora.md).
+- [`ease_xiao/`](ease_xiao/) : station autonome XIAO ESP32S3 ;
+- [`ease_station_test/`](ease_station_test/) : versions précédentes et station de test.
 
-### Guide pas à pas — station Wi‑Fi
+## Fichiers du projet XIAO
 
-La version Wi‑Fi utilise un seul Arduino UNO R4 WiFi. L'Arduino et le PC serveur
-doivent être connectés au même réseau local.
-
-#### 1. Préparer le PC et connaître son adresse réseau
-
-1. Connecter le PC au réseau Wi‑Fi qui sera utilisé par la station.
-2. Ouvrir PowerShell et exécuter :
-
-   ```powershell
-   ipconfig
-   ```
-
-3. Dans la section de la carte Wi‑Fi active, noter l'**Adresse IPv4**, par
-   exemple `192.168.1.100`. Cette adresse sera renseignée dans l'Arduino.
-4. Éviter un réseau invité qui interdit les communications entre appareils.
-   Si possible, réserver cette adresse IP au PC dans la box afin qu'elle ne
-   change pas.
-
-#### 2. Créer les deux fichiers secrets
-
-1. Dans `Station_Complete_wifi`, copier les modèles :
-
-   ```powershell
-   cd ".\Station_Complete_wifi"
-   Copy-Item ".\arduino_secrets.h.example" ".\arduino_secrets.h"
-   Copy-Item ".\server_secrets.bat.example" ".\server_secrets.bat"
-   ```
-
-2. Ouvrir `arduino_secrets.h` et renseigner :
-
-   ```cpp
-   #define SECRET_SSID "NOM_DU_WIFI"
-   #define SECRET_PASS "MOT_DE_PASSE_DU_WIFI"
-   #define SERVER_ADDRESS "192.168.1.100"
-   #define EASE_INGEST_TOKEN "UN_JETON_LONG_ET_ALEATOIRE"
-   ```
-
-3. Ouvrir `server_secrets.bat` et saisir exactement le même jeton :
-
-   ```bat
-   @echo off
-   set "EASE_INGEST_TOKEN=UN_JETON_LONG_ET_ALEATOIRE"
-   ```
-
-4. Ne pas envoyer ni publier ces deux fichiers : ils contiennent le mot de
-   passe Wi‑Fi et le jeton privé de la station.
-
-#### 3. Téléverser le programme Wi‑Fi
-
-1. Ouvrir `Station_Complete_wifi\Station_Complete_wifi.ino`.
-2. Sélectionner **Arduino UNO R4 WiFi** et le port COM de la carte.
-3. Pour régler l'horloge RTC, décommenter temporairement l'appel
-   `forcerHeureRTC(...)` dans `setup()`, saisir la date et l'heure actuelles,
-   puis téléverser une première fois.
-4. Recommenter immédiatement cet appel et téléverser une seconde fois.
-5. Laisser la station allumée et vérifier qu'elle se connecte au réseau Wi‑Fi.
-
-#### 4. Installer le serveur Python Wi‑Fi
-
-Dans PowerShell, depuis la racine du projet :
-
-```powershell
-cd ".\Station_Complete_wifi"
-py -3 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-```
-
-#### 5. Autoriser le serveur dans le pare-feu
-
-1. Double-cliquer sur `lancer_serveur_wifi.bat`.
-2. Au premier lancement, si Windows demande une autorisation réseau pour
-   Python, l'autoriser au minimum sur les **réseaux privés**.
-3. Si aucune demande n'apparaît et que l'Arduino ne joint pas le serveur,
-   créer dans le Pare-feu Windows une règle entrante autorisant le port
-   **TCP 5000** sur le profil privé.
-
-#### 6. Vérifier le fonctionnement
-
-1. Ouvrir [http://localhost:5000](http://localhost:5000) sur le PC serveur.
-2. Ouvrir
-   [http://localhost:5000/api/health](http://localhost:5000/api/health) et
-   vérifier que `ingest_protected` vaut `true`.
-3. Attendre environ dix secondes et vérifier que les mesures de la station
-   apparaissent.
-4. Pour tester depuis un autre appareil du même réseau, ouvrir
-   `http://ADRESSE_IP_DU_PC:5000`, par exemple
-   `http://192.168.1.100:5000`.
-5. Pour arrêter le serveur, revenir dans son terminal et appuyer sur
-   `Ctrl+C`.
-
-Si le dashboard s'ouvre mais qu'aucune mesure n'arrive, vérifier en priorité
-l'adresse `SERVER_ADDRESS`, l'identité des deux jetons, le pare-feu, ainsi que
-la connexion du PC et de l'Arduino au même réseau.
-
-Le guide Wi‑Fi détaillé reste disponible dans
-[`Station_Complete_wifi/PROCEDURE_INSTALLATION_WIFI.md`](Station_Complete_wifi/PROCEDURE_INSTALLATION_WIFI.md).
-
-## Configuration et sécurité
-
-Les identifiants Wi‑Fi, jetons de collecte, journaux CSV et fichiers propres à
-la machine ne sont pas versionnés. Copier les fichiers `.example`, renseigner
-les valeurs localement, puis téléverser le firmware.
-
-## Tests
-
-```powershell
-python -m unittest discover -s tests -v
-```
-
-Les fichiers CAD, présentations et archives volumineuses sont suivis avec
-Git LFS.
+- `ease_xiao/ease_xiao.ino` : firmware complet ;
+- `ease_xiao/dashboard.h` : interface web embarquée sans dépendance Internet ;
+- `ease_xiao/config.example.h` : valeurs par défaut et seuils ;
+- `ease_xiao/config.h.example` : modèle de configuration Wi-Fi ;
+- `ease_xiao/CABLAGE.md` : raccordement pas à pas ;
+- `ease_xiao/VERIFICATION.md` : procédure de mise en service.

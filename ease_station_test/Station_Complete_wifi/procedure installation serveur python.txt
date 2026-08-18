@@ -1,0 +1,30 @@
+Voici la procédure complète, étape par étape, pour migrer et lancer le serveur Python sur un autre ordinateur :
+
+1. Préparer le nouvel ordinateur
+Assurez-vous que Python est bien installé sur le nouvel ordinateur (s'il est sous Windows, il peut s'installer facilement depuis le Microsoft Store ou via Python.org).
+Copiez le dossier entier Station_Complete_wifi (qui contient data_wifi.py, requirements.txt, templates et static) sur le nouvel ordinateur, par exemple avec une clé USB.
+2. Installer les bibliothèques Python
+Le nouvel ordinateur a besoin de la bibliothèque web (Flask) pour faire tourner le tableau de bord :
+
+Sur le nouvel ordinateur, ouvrez une Invite de commandes (tapez cmd dans le menu démarrer) ou PowerShell.
+Tapez la commande suivante puis appuyez sur Entrée : python -m pip install -r requirements.txt
+3. Trouver la nouvelle adresse IP
+L'Arduino a besoin de savoir à qui envoyer les informations. Il faut donc récupérer l'adresse IP du nouvel ordinateur sur le réseau Wi-Fi :
+
+Toujours dans l'invite de commandes, tapez la commande : ipconfig
+Repérez la section correspondant à la carte Wi-Fi et notez la ligne Adresse IPv4 (elle ressemble souvent à 192.168... ou 10.226...).
+4. Informer l'Arduino de ce changement
+Sur l'ordinateur où se trouve l'IDE Arduino, ouvrez `arduino_secrets.h`.
+Modifiez `SERVER_ADDRESS` en y insérant la nouvelle adresse IP, puis renseignez le Wi-Fi.
+Utilisez le même `EASE_INGEST_TOKEN` que dans `server_secrets.bat`.
+Téléversez le code mis à jour dans la carte Arduino.
+5. Démarrer le serveur
+Sur le nouvel ordinateur, double-cliquez sur `lancer_serveur_wifi.bat`.
+Ouvrez votre navigateur web et allez sur http://localhost:5000.
+Et voilà ! L'Arduino enverra ses données sans fil à ce nouvel ordinateur et le tableau de bord s'affichera normalement.
+
+pour forcer l'heure :ligne 120
+modifier l'interval de temps : ligne 86  intervalData en millisecondes
+arreter le serveur : CTRL + C
+
+Pour la version LoRa, suivez `Station_complete_lora/PROCEDURE_INSTALLATION_Lora.md`.
