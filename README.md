@@ -1,8 +1,11 @@
-# EASE XIAO — station autonome de qualité de l’air
+# FLAQ XIAO — FabLab Air Quality
 
-Projet Arduino pour **Seeed Studio XIAO ESP32S3**. La carte acquiert les
+Projet académique de contrôle de la qualité de l’air dans les FabLabs, réalisé
+avec une **Seeed Studio XIAO ESP32S3**. La carte acquiert les
 capteurs, affiche les mesures sur OLED, enregistre l’historique sur microSD et
 héberge elle-même un dashboard accessible depuis un téléphone ou un ordinateur.
+
+![Prototype FLAQ XIAO assemblé](20260822_182452.jpg)
 
 ## Fonctions incluses
 
@@ -10,13 +13,13 @@ héberge elle-même un dashboard accessible depuis un téléphone ou un ordinate
 - lecture du SGP40 toutes les secondes avec compensation DHT20 ;
 - trois graphiques avec axes indépendants ;
 - moyenne glissante PM2.5 sur 24 heures ;
-- indice intérieur EASE du vert au rouge ;
+- indice intérieur FLAQ du vert au rouge ;
 - alarme confirmée sur buzzer passif au niveau rouge ;
 - journal persistant des dépassements avec durée, moyenne et maximum ;
 - synthèse quotidienne et export CSV depuis le dashboard ;
 - horodatage par RTC Grove PCF85063 ;
 - correction NTP automatique lorsque le réseau donne accès à Internet ;
-- point d’accès `EASE-XIAO` si aucun Wi-Fi n’est configuré ou disponible ;
+- point d’accès `FLAQ-XIAO` si aucun Wi-Fi n’est configuré ou disponible ;
 - reprise de l’historique des dernières 24 heures après redémarrage ;
 - navigation manuelle entre les quatre pages OLED avec le bouton Grove ;
 - extinction de l’OLED après 20 secondes sans appui et réveil automatique ;
@@ -74,7 +77,7 @@ fournies par le paquet ESP32.
 ## Configuration Wi-Fi
 
 Le projet fonctionne immédiatement sans identifiants : la carte crée le réseau
-`EASE-XIAO`, protégé par le mot de passe `ease-air`. Une fois connecté à ce
+`FLAQ-XIAO`, protégé par le mot de passe `flaq-air`. Une fois connecté à ce
 réseau, ouvrir `http://192.168.4.1`.
 
 Pour connecter la station au réseau local :
@@ -84,7 +87,7 @@ Pour connecter la station au réseau local :
 3. téléverser à nouveau le programme.
 
 Le dashboard devient alors accessible à l’adresse IP affichée sur l’OLED et,
-si le réseau l’autorise, à `http://ease-xiao.local`.
+si le réseau l’autorise, à `http://flaq-xiao.local`.
 
 `config.h` est ignoré par Git pour ne pas publier le mot de passe.
 
@@ -113,7 +116,7 @@ les oscillations autour d’une limite.
 Le seuil de la moyenne PM2.5 sur 24 heures produit un événement distinct. Il
 n’est activé que lorsque la station dispose d’au moins 23 heures d’historique.
 
-Ces seuils constituent un indicateur pédagogique EASE de qualité de l’air
+Ces seuils constituent un indicateur pédagogique FLAQ de qualité de l’air
 intérieur ; ils ne remplacent pas un dispositif réglementaire ou certifié.
 
 ## Particularités du WSP2110
@@ -139,6 +142,7 @@ moniteur série affiche `WSP_Rs` et `ADC` pour faciliter cette opération.
 | Route | Rôle |
 |---|---|
 | `/` | dashboard |
+| `/logo.png` | logo FLAQ et favicon |
 | `/api/live` | dernière mesure et état technique |
 | `/api/history?since=...&max=900` | historique sous-échantillonné |
 | `/api/events?max=200` | journal des dépassements |

@@ -14,6 +14,7 @@
 #include <math.h>
 
 #include "dashboard.h"
+#include "flaq_logo.h"
 #if __has_include("config.h")
 #include "config.h"
 #else
@@ -26,13 +27,18 @@ static_assert(EASE_VENTILATION_BUTTON_PIN != EASE_WSP2110_PIN,
 #endif
 
 // -----------------------------------------------------------------------------
-// EASE XIAO ESP32S3 — station autonome de qualité de l'air
+// FLAQ XIAO ESP32S3 — station académique de qualité de l'air des FabLabs
 // -----------------------------------------------------------------------------
 
 constexpr uint8_t RTC_ADDRESS = 0x51;
 constexpr uint8_t HM3301_ADDRESS = 0x40;
 constexpr size_t HISTORY_CAPACITY = 8640;  // 24 h à une mesure toutes les 10 s
 constexpr size_t EVENT_CAPACITY = 200;
+constexpr uint16_t SOS_DURATIONS_MS[] = {
+    150, 150, 150, 150, 150, 450,
+    450, 150, 450, 150, 450, 450,
+    150, 150, 150, 150, 150
+};
 #if EASE_WSP2110_ENABLED
 constexpr uint8_t SENSOR_TOTAL = 5;
 #else
@@ -159,8 +165,9 @@ uint32_t lastVentilationButtonChange = 0;
 uint32_t lastOledActivity = 0;
 uint32_t lastWifiAttempt = 0;
 uint32_t lastRtcNtpWrite = 0;
-uint32_t lastBuzzerToggle = 0;
-bool buzzerOn = false;
+uint32_t buzzerStepStarted = 0;
+uint8_t buzzerStep = 0;
+bool buzzerTriggeredForAlarm = false;
 
 // -----------------------------------------------------------------------------
 // Utilitaires
@@ -604,16 +611,32 @@ void updateAlarm() {
 
 void serviceBuzzer() {
     if (!alarmActive) {
-        if (buzzerOn) noTone(EASE_BUZZER_PIN);
-        buzzerOn = false;
+        noTone(EASE_BUZZER_PIN);
+        buzzerTriggeredForAlarm = false;
+        buzzerStep = 0;
         return;
     }
-    uint32_t interval = buzzerOn ? 450UL : 1200UL;
-    if (millis() - lastBuzzerToggle >= interval) {
-        lastBuzzerToggle = millis();
-        buzzerOn = !buzzerOn;
-        if (buzzerOn) tone(EASE_BUZZER_PIN, 2700);
-        else noTone(EASE_BUZZER_PIN);
+
+    uint32_t now = millis();
+    if (!buzzerTriggeredForAlarm) {
+        buzzerTriggeredForAlarm = true;
+        buzzerStep = 0;
+        buzzerStepStarted = now;
+        tone(EASE_BUZZER_PIN, 2700);
+        return;
+    }
+
+    if (buzzerStep < sizeof(SOS_DURATIONS_MS) / sizeof(SOS_DURATIONS_MS[0]) &&
+        now - buzzerStepStarted >= SOS_DURATIONS_MS[buzzerStep]) {
+        buzzerStepStarted = now;
+        buzzerStep++;
+        if (buzzerStep >= sizeof(SOS_DURATIONS_MS) / sizeof(SOS_DURATIONS_MS[0])) {
+            noTone(EASE_BUZZER_PIN);
+        } else if (buzzerStep % 2 == 0) {
+            tone(EASE_BUZZER_PIN, 2700);
+        } else {
+            noTone(EASE_BUZZER_PIN);
+        }
     }
 }
 
@@ -820,7 +843,7 @@ void printOledValue(uint8_t x, uint8_t y, const char* label, float value, uint8_
 void drawOled() {
     oled.clear();
     char line[17];
-    snprintf(line, sizeof(line), "EASE %s", alarmActive ? "ALERTE" : "AIR");
+    snprintf(line, sizeof(line), "FLAQ %s", alarmActive ? "ALERTE" : "AIR");
     oled.setCursor(0, 0);
     oled.print(line);
     oled.setCursor(11, 0);
@@ -918,8 +941,8 @@ void serviceVentilationButton(uint32_t now) {
 void startAccessPoint() {
     WiFi.mode(WIFI_AP);
     apMode = true;
-    WiFi.softAP("EASE-XIAO", EASE_AP_PASSWORD);
-    Serial.printf("Point d'acces EASE-XIAO: http://%s\n", WiFi.softAPIP().toString().c_str());
+    WiFi.softAP("FLAQ-XIAO", EASE_AP_PASSWORD);
+    Serial.printf("Point d'acces FLAQ-XIAO: http://%s\n", WiFi.softAPIP().toString().c_str());
 }
 
 void initializeNetwork() {
@@ -1065,7 +1088,7 @@ void handleEventsCsv() {
         return;
     }
     File file = SD.open("/events.csv", FILE_READ);
-    server.sendHeader("Content-Disposition", "attachment; filename=ease_evenements.csv");
+    server.sendHeader("Content-Disposition", "attachment; filename=flaq_evenements.csv");
     server.streamFile(file, "text/csv; charset=utf-8");
     file.close();
 }
@@ -1074,6 +1097,10 @@ void initializeServer() {
     server.on("/", HTTP_GET, []() {
         server.sendHeader("Cache-Control", "no-cache");
         server.send_P(200, "text/html; charset=utf-8", EASE_DASHBOARD_HTML);
+    });
+    server.on("/logo.png", HTTP_GET, []() {
+        server.sendHeader("Cache-Control", "public, max-age=86400");
+        server.send_P(200, "image/png", reinterpret_cast<const char*>(FLAQ_LOGO_PNG), FLAQ_LOGO_PNG_LEN);
     });
     server.on("/api/live", HTTP_GET, handleLive);
     server.on("/api/history", HTTP_GET, handleHistory);
@@ -1085,7 +1112,7 @@ void initializeServer() {
                           ",\"free_psram\":" + ESP.getFreePsram() + "}";
         server.send(200, "application/json", response);
     });
-    server.onNotFound([]() { server.send(404, "text/plain", "EASE: page introuvable"); });
+    server.onNotFound([]() { server.send(404, "text/plain", "FLAQ: page introuvable"); });
     server.begin();
 }
 
@@ -1131,7 +1158,7 @@ void setup() {
     oled.setPowerSave(0);
     oled.setFont(u8x8_font_chroma48medium8_r);
     oled.clear();
-    oled.setCursor(0, 0); oled.print("EASE XIAO S3");
+    oled.setCursor(0, 0); oled.print("FLAQ XIAO S3");
     oled.setCursor(0, 2); oled.print("Initialisation");
 
     historyBuffer = static_cast<Measurement*>(ps_malloc(sizeof(Measurement) * HISTORY_CAPACITY));

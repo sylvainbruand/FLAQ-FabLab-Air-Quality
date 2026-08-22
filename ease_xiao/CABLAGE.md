@@ -1,4 +1,4 @@
-# Câblage de la station EASE XIAO
+# Câblage de la station FLAQ XIAO
 
 ## Bus I²C Grove
 

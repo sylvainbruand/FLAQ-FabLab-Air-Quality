@@ -37,8 +37,8 @@ Hub I2C TCA9548A 0x70: OK (canaux 0xFF)
 
 Sans configuration Wi-Fi :
 
-1. se connecter au réseau `EASE-XIAO` ;
-2. utiliser le mot de passe `ease-air` ;
+1. se connecter au réseau `FLAQ-XIAO` ;
+2. utiliser le mot de passe `flaq-air` ;
 3. ouvrir `http://192.168.4.1`.
 
 Avec configuration Wi-Fi, utiliser l’adresse affichée sur la quatrième page de

@@ -2,12 +2,12 @@
 
 // Copiez ce fichier sous le nom config.h pour personnaliser la station.
 // Si config.h est absent, le firmware utilise ces valeurs et crée le point
-// d'accès Wi-Fi local EASE-XIAO.
+// d'accès Wi-Fi local FLAQ-XIAO.
 
 #define EASE_WIFI_SSID ""
 #define EASE_WIFI_PASSWORD ""
-#define EASE_HOSTNAME "ease-xiao"
-#define EASE_AP_PASSWORD "ease-air"
+#define EASE_HOSTNAME "flaq-xiao"
+#define EASE_AP_PASSWORD "flaq-air"
 
 // Grove 8-Channel I2C Hub TCA9548A. Tous les capteurs du projet ont des
 // adresses différentes : les huit canaux peuvent donc rester ouverts.
@@ -42,7 +42,7 @@
 #define EASE_BUTTON_DEBOUNCE_MS 35UL
 #define EASE_SD_FLUSH_INTERVAL_MS 60000UL
 
-// Seuils de l'indice intérieur EASE. Ils restent modifiables ici sans toucher
+// Seuils de l'indice intérieur FLAQ. Ils restent modifiables ici sans toucher
 // au reste du firmware.
 #define EASE_CO2_YELLOW_PPM 800.0f
 #define EASE_CO2_ORANGE_PPM 1000.0f
