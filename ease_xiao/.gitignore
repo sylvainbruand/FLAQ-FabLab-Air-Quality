@@ -4,3 +4,5 @@ config.h
 *.elf
 *.map
 .arduino/
+config.h.old
+SW/video_2026-08-21_10-36-17.mp4

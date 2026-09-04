@@ -21,37 +21,31 @@ La longueur totale des câbles I²C doit rester raisonnable. Le firmware utilise
 Brancher le buzzer passif sur le port numérique correspondant à `D1`. Le
 firmware produit une tonalité de 2 700 Hz lorsque l’indice rouge est confirmé.
 
-## Bouton Grove (P) 111020000
+## Grove Dual Button sur D7 / UART
 
-Le bouton utilise un seul signal numérique. Le raccorder au connecteur Grove
-marqué `D7 / UART` du shield XIAO :
+Raccorder le Grove Dual Button au connecteur marqué `D7 / UART` du shield
+XIAO. Les deux lignes de signal de cette prise sont utilisées :
 
 | Signal Grove | XIAO ESP32S3 | Fonction |
 |---|---|---|
-| jaune | `D7` | signal du bouton |
-| blanc | `D6` | non utilisé |
-| rouge | `3,3 V` | alimentation |
+| jaune / SIG1 | `D7` | bouton de changement de page |
+| blanc / SIG2 | `D6` | bouton de ventilation |
+| rouge | `3,3 V` | alimentation du Dual Button |
 | noir | `GND` | masse |
 
-Chaque appui fait avancer d’une page et la quatrième page revient à la première.
+Le bouton sur D7 fait avancer d’une page et la quatrième page revient à la première.
 L’écran s’éteint après 20 secondes sans appui ; l’appui suivant le rallume et
 affiche directement la page suivante. Le filtrage anti-rebond est intégré au
 firmware.
 
-Le bouton est compatible 3,3 V/5 V, mais il doit être alimenté ici en 3,3 V afin
-que son niveau haut reste sans danger pour la XIAO. Ne jamais envoyer directement
-un signal 5 V sur `D7`.
+Le bouton sur D6 inverse l’état : ventilation active, puis ventilation arrêtée.
+Un appui simultané sur les deux boutons active ou désactive le mode muet.
+Les sorties du module sont actives à l’état bas ; le firmware active aussi les
+résistances de tirage internes de la XIAO.
 
-## Bouton de ventilation Grove (P) 111020000
-
-Raccorder le second bouton au connecteur Grove marqué `D0 / A0` : jaune sur
-`D0`, rouge sur 3,3 V et noir sur GND. Le fil blanc n’est pas utilisé. Chaque
-appui inverse l’état : ventilation active, puis ventilation arrêtée.
-
-`D0` est partagé avec l’emplacement prévu pour le WSP2110. Les deux équipements
-ne doivent jamais être branchés simultanément sur cette broche. Si le WSP2110
-est installé plus tard, déplacer le bouton de ventilation vers une autre broche
-libre et modifier `EASE_VENTILATION_BUTTON_PIN` dans `config.h`.
+Le Dual Button doit être alimenté ici en 3,3 V afin que ses niveaux hauts restent
+sans danger pour la XIAO. Ne jamais envoyer directement un signal 5 V sur D6 ou
+D7. Ce raccordement laisse `D0 / A0` entièrement disponible pour le WSP2110.
 
 ## Grove HCHO WSP2110 — entrée analogique protégée
 
@@ -73,6 +67,13 @@ Ajouter de préférence un condensateur céramique de 100 nF entre `D0` et GND,
 au plus près du XIAO. Le rapport du pont est alors 2/3, valeur déjà définie par
 `EASE_WSP2110_DIVIDER_RATIO`. Vérifier au multimètre que D0 reste toujours sous
 3,3 V avant de le connecter à la carte.
+
+Le firmware accepte que le WSP2110 ne soit pas installé : D0 peut rester non
+connecté, le démarrage continue normalement et la valeur HCHO reste indiquée
+comme indisponible jusqu’à la première lecture valide. Un bref test logiciel
+compare les résistances de tirage vers la masse et vers le 3,3 V afin d’empêcher
+une entrée D0 flottante d’être prise par erreur pour un capteur présent. Trois
+lectures valides consécutives sont ensuite nécessaires pour publier le HCHO.
 
 ## Module microSD Adafruit 254
 

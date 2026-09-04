@@ -1,9 +1,9 @@
 #pragma once
 
-// Exemple minimal. Renommez ce fichier en config.h puis renseignez le Wi-Fi.
+// Renommez ce fichier en config.h puis renseignez un ou plusieurs réseaux.
 #include "config.example.h"
 
-#undef EASE_WIFI_SSID
-#undef EASE_WIFI_PASSWORD
-#define EASE_WIFI_SSID "Nom_du_WiFi"
-#define EASE_WIFI_PASSWORD "Mot_de_passe_du_WiFi"
+#define EASE_WIFI_NETWORKS \
+    {"WiFi_Maison", "Mot_de_passe_maison"}, \
+    {"WiFi_Ecole", "Mot_de_passe_ecole"}, \
+    {"Partage_Telephone", "Mot_de_passe_telephone"}

@@ -10,18 +10,23 @@
 6. Avant de raccorder D0, mesurer la sortie du pont WSP2110 et confirmer
    qu’elle reste sous 3,3 V.
 
-Tant que le WSP2110 et son pont diviseur ne sont pas montés, conserver
-`EASE_WSP2110_ENABLED 0`. D0 peut alors rester entièrement non connecté.
+Tant que le WSP2110 et son pont diviseur ne sont pas montés, D0 peut rester
+entièrement non connecté : le démarrage doit continuer et la mesure HCHO doit
+rester indisponible.
 
 ## Démarrage attendu
 
-Avec le WSP2110 désactivé, le moniteur série doit indiquer l’état des quatre
+Avec le WSP2110 absent, le moniteur série doit indiquer l’état des quatre
 capteurs actifs, du hub TCA9548A, de la RTC, de la
 microSD et du Wi-Fi. Le HM3301 demande environ 30 secondes de stabilisation. Le
 SGP40 détecte rapidement les variations, mais ses performances nominales
 nécessitent une période de fonctionnement plus longue. Le WSP2110 demande au
 moins 120 heures de chauffe avant l’étalonnage initial ; avant cela, sa valeur
 sert uniquement à vérifier que la chaîne analogique répond.
+
+L’adresse `Adresse MAC Wi-Fi (STA)` affichée dans le moniteur série ne doit pas
+être `00:00:00:00:00:00`. Avec D0 non branchée, le WSP2110 doit rester indiqué
+comme indisponible.
 
 Pour le HM3301, chaque acquisition est retentée jusqu'à trois fois. Après une
 erreur, le firmware rouvre le TCA9548A et renvoie automatiquement la commande
@@ -42,7 +47,9 @@ Sans configuration Wi-Fi :
 3. ouvrir `http://192.168.4.1`.
 
 Avec configuration Wi-Fi, utiliser l’adresse affichée sur la quatrième page de
-l’OLED.
+l’OLED. Au démarrage, vérifier que le bouton droit parcourt les réseaux
+configurés, que le bouton sur D6 valide le réseau affiché, puis que les deux
+boutons retrouvent leurs fonctions normales après la connexion.
 
 ## Contrôles fonctionnels
 

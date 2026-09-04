@@ -12,6 +12,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
+#include <esp_mac.h>
 
 #include "dashboard.h"
 #include "flaq_logo.h"
@@ -21,7 +22,11 @@
 #include "config.example.h"
 #endif
 
+static_assert(EASE_OLED_BUTTON_PIN != EASE_VENTILATION_BUTTON_PIN,
+              "Les deux boutons du Grove Dual Button doivent utiliser deux broches distinctes");
 #if EASE_WSP2110_ENABLED
+static_assert(EASE_OLED_BUTTON_PIN != EASE_WSP2110_PIN,
+              "Le bouton de page et le WSP2110 ne peuvent pas partager la meme broche");
 static_assert(EASE_VENTILATION_BUTTON_PIN != EASE_WSP2110_PIN,
               "Le bouton de ventilation et le WSP2110 ne peuvent pas partager la meme broche");
 #endif
@@ -39,11 +44,7 @@ constexpr uint16_t SOS_DURATIONS_MS[] = {
     450, 150, 450, 150, 450, 450,
     150, 150, 150, 150, 150
 };
-#if EASE_WSP2110_ENABLED
-constexpr uint8_t SENSOR_TOTAL = 5;
-#else
-constexpr uint8_t SENSOR_TOTAL = 4;
-#endif
+constexpr uint8_t REQUIRED_SENSOR_TOTAL = 4;
 
 U8X8_SSD1306_128X64_NONAME_HW_I2C oled(U8X8_PIN_NONE);
 Adafruit_SGP40 sgp40;
@@ -98,6 +99,18 @@ struct EventRule {
     float reset;
 };
 
+struct WifiNetwork {
+    const char* ssid;
+    const char* password;
+};
+
+#ifdef EASE_WIFI_NETWORKS
+const WifiNetwork WIFI_NETWORKS[] = {EASE_WIFI_NETWORKS};
+#else
+const WifiNetwork WIFI_NETWORKS[] = {{EASE_WIFI_SSID, EASE_WIFI_PASSWORD}};
+#endif
+constexpr size_t WIFI_NETWORK_COUNT = sizeof(WIFI_NETWORKS) / sizeof(WIFI_NETWORKS[0]);
+
 enum EventId : uint8_t {
     EVENT_CO2,
     EVENT_VOC,
@@ -136,6 +149,7 @@ bool scdOk = false;
 bool hmOk = false;
 bool sgpOk = false;
 bool wspOk = false;
+uint8_t wspValidReadings = 0;
 bool dhtOk = false;
 bool apMode = false;
 bool alarmActive = false;
@@ -158,6 +172,8 @@ bool buttonLastReading = false;
 bool ventilationActive = false;
 bool ventilationButtonStableState = false;
 bool ventilationButtonLastReading = false;
+bool soundMuted = false;
+bool buttonChordActive = false;
 uint32_t lastSample = 0;
 uint32_t lastSgp40 = 0;
 uint32_t lastButtonChange = 0;
@@ -168,6 +184,7 @@ uint32_t lastRtcNtpWrite = 0;
 uint32_t buzzerStepStarted = 0;
 uint8_t buzzerStep = 0;
 bool buzzerTriggeredForAlarm = false;
+size_t selectedWifiNetwork = 0;
 
 // -----------------------------------------------------------------------------
 // Utilitaires
@@ -610,7 +627,7 @@ void updateAlarm() {
 }
 
 void serviceBuzzer() {
-    if (!alarmActive) {
+    if (soundMuted || !alarmActive) {
         noTone(EASE_BUZZER_PIN);
         buzzerTriggeredForAlarm = false;
         buzzerStep = 0;
@@ -684,6 +701,27 @@ bool readHm3301(uint8_t* data, size_t length) {
 }
 
 float readWsp2110() {
+    // Une broche libre suit fortement les résistances internes. Le pont et le
+    // capteur connectés limitent au contraire cet écart.
+    pinMode(EASE_WSP2110_PIN, INPUT_PULLDOWN);
+    delay(5);
+    const uint32_t pullDownMillivolts = analogReadMilliVolts(EASE_WSP2110_PIN);
+    pinMode(EASE_WSP2110_PIN, INPUT_PULLUP);
+    delay(5);
+    const uint32_t pullUpMillivolts = analogReadMilliVolts(EASE_WSP2110_PIN);
+    pinMode(EASE_WSP2110_PIN, INPUT);
+    delay(5);
+    const uint32_t pullDifference = pullUpMillivolts > pullDownMillivolts
+        ? pullUpMillivolts - pullDownMillivolts
+        : pullDownMillivolts - pullUpMillivolts;
+    if (pullDifference >= EASE_WSP2110_PRESENCE_DELTA_MV) {
+        wspAdcVoltage = NAN;
+        wspRsRatio = NAN;
+        wspOk = false;
+        wspValidReadings = 0;
+        return NAN;
+    }
+
     constexpr uint8_t SAMPLE_COUNT = 16;
     uint32_t millivoltSum = 0;
     for (uint8_t i = 0; i < SAMPLE_COUNT; i++) {
@@ -696,6 +734,7 @@ float readWsp2110() {
     if (sensorVoltage <= 0.01f || sensorVoltage >= EASE_WSP2110_VC_VOLTS * 0.995f) {
         wspRsRatio = NAN;
         wspOk = false;
+        wspValidReadings = 0;
         return NAN;
     }
 
@@ -703,11 +742,18 @@ float readWsp2110() {
     wspRsRatio = EASE_WSP2110_VC_VOLTS / sensorVoltage - 1.0f;
     if (!isfinite(wspRsRatio) || wspRsRatio <= 0.0f || EASE_WSP2110_R0_RATIO <= 0.0f) {
         wspOk = false;
+        wspValidReadings = 0;
         return NAN;
     }
     const float ppm = powf(10.0f,
         (log10f(wspRsRatio / EASE_WSP2110_R0_RATIO) - 0.0827f) / -0.4807f);
-    wspOk = isfinite(ppm) && ppm >= 0.0f && ppm <= 1000.0f;
+    if (!isfinite(ppm) || ppm < 0.0f || ppm > 1000.0f) {
+        wspOk = false;
+        wspValidReadings = 0;
+        return NAN;
+    }
+    if (wspValidReadings < EASE_WSP2110_VALID_READINGS) wspValidReadings++;
+    wspOk = wspValidReadings >= EASE_WSP2110_VALID_READINGS;
     return wspOk ? ppm : NAN;
 }
 
@@ -738,9 +784,9 @@ void initializeSensors() {
     Serial.printf("Capteurs SCD30=%d HM3301=%d SGP40=%d DHT20=%d\n",
                   scdOk, hmOk, sgpOk, dhtOk);
 #if EASE_WSP2110_ENABLED
-    Serial.printf("WSP2110=%d\n", wspOk);
+    Serial.printf("WSP2110=%s\n", wspOk ? "disponible" : "indisponible");
 #else
-    Serial.println("WSP2110=desactive (D0 inutilise)");
+    Serial.println("WSP2110=desactive");
 #endif
 }
 
@@ -809,6 +855,10 @@ uint8_t sensorOkCount() {
     count += static_cast<uint8_t>(wspOk);
 #endif
     return count;
+}
+
+uint8_t sensorTotal() {
+    return REQUIRED_SENSOR_TOTAL + static_cast<uint8_t>(wspOk);
 }
 
 void takeSample() {
@@ -880,7 +930,7 @@ void drawOled() {
             oled.setCursor(0, 3); oled.print(WiFi.status() == WL_CONNECTED ? WiFi.localIP().toString() : WiFi.softAPIP().toString());
             oled.setCursor(0, 5); oled.print(sdOk ? "SD OK" : "SD ERREUR");
             oled.setCursor(8, 5); oled.print(rtcOk ? "RTC OK" : "RTC ERR");
-            snprintf(line, sizeof(line), "CAPTEURS %u/%u", sensorOkCount(), SENSOR_TOTAL);
+            snprintf(line, sizeof(line), "CAPTEURS %u/%u", sensorOkCount(), sensorTotal());
             oled.setCursor(0, 6); oled.print(line);
             break;
     }
@@ -890,17 +940,17 @@ void drawOled() {
     oled.print("^");
 }
 
-void serviceOledButton(uint32_t now) {
-    bool reading = digitalRead(EASE_OLED_BUTTON_PIN) == HIGH;
-    if (reading != buttonLastReading) {
-        buttonLastReading = reading;
+void serviceButtons(uint32_t now) {
+    bool oledReading = digitalRead(EASE_OLED_BUTTON_PIN) == LOW;
+    bool ventilationReading = digitalRead(EASE_VENTILATION_BUTTON_PIN) == LOW;
+    if (oledReading != buttonLastReading) {
+        buttonLastReading = oledReading;
         lastButtonChange = now;
     }
-
     if (now - lastButtonChange >= EASE_BUTTON_DEBOUNCE_MS &&
-        reading != buttonStableState) {
-        buttonStableState = reading;
-        if (buttonStableState) {
+        oledReading != buttonStableState) {
+        buttonStableState = oledReading;
+        if (!buttonStableState && !buttonChordActive) {
             oledPage = (oledPage + 1) % 4;
             lastOledActivity = now;
             if (!oledAwake) {
@@ -910,27 +960,32 @@ void serviceOledButton(uint32_t now) {
             drawOled();
         }
     }
+    if (ventilationReading != ventilationButtonLastReading) {
+        ventilationButtonLastReading = ventilationReading;
+        lastVentilationButtonChange = now;
+    }
+    if (now - lastVentilationButtonChange >= EASE_BUTTON_DEBOUNCE_MS &&
+        ventilationReading != ventilationButtonStableState) {
+        ventilationButtonStableState = ventilationReading;
+        if (!ventilationButtonStableState && !buttonChordActive) {
+            ventilationActive = !ventilationActive;
+            Serial.printf("Ventilation: %s\n", ventilationActive ? "ACTIVE" : "ARRETEE");
+        }
+    }
+
+    if (buttonStableState && ventilationButtonStableState && !buttonChordActive) {
+        buttonChordActive = true;
+        soundMuted = !soundMuted;
+        noTone(EASE_BUZZER_PIN);
+        buzzerTriggeredForAlarm = false;
+        Serial.printf("Son: %s\n", soundMuted ? "MUET" : "NORMAL");
+    } else if (!buttonStableState && !ventilationButtonStableState) {
+        buttonChordActive = false;
+    }
 
     if (oledAwake && now - lastOledActivity >= EASE_OLED_TIMEOUT_MS) {
         oled.setPowerSave(1);
         oledAwake = false;
-    }
-}
-
-void serviceVentilationButton(uint32_t now) {
-    bool reading = digitalRead(EASE_VENTILATION_BUTTON_PIN) == HIGH;
-    if (reading != ventilationButtonLastReading) {
-        ventilationButtonLastReading = reading;
-        lastVentilationButtonChange = now;
-    }
-
-    if (now - lastVentilationButtonChange >= EASE_BUTTON_DEBOUNCE_MS &&
-        reading != ventilationButtonStableState) {
-        ventilationButtonStableState = reading;
-        if (ventilationButtonStableState) {
-            ventilationActive = !ventilationActive;
-            Serial.printf("Ventilation: %s\n", ventilationActive ? "ACTIVE" : "ARRETEE");
-        }
     }
 }
 
@@ -945,14 +1000,63 @@ void startAccessPoint() {
     Serial.printf("Point d'acces FLAQ-XIAO: http://%s\n", WiFi.softAPIP().toString().c_str());
 }
 
+void drawWifiSelection() {
+    oled.clear();
+    oled.setCursor(0, 0); oled.print("CHOIX DU WIFI");
+    oled.setCursor(0, 2); oled.print(WIFI_NETWORKS[selectedWifiNetwork].ssid);
+    char position[17];
+    snprintf(position, sizeof(position), "Reseau %u/%u",
+             static_cast<unsigned int>(selectedWifiNetwork + 1),
+             static_cast<unsigned int>(WIFI_NETWORK_COUNT));
+    oled.setCursor(0, 4); oled.print(position);
+    oled.setCursor(0, 6); oled.print("Droite: suivant");
+    oled.setCursor(0, 7); oled.print("Gauche: valider");
+}
+
+void selectWifiNetwork() {
+    if (WIFI_NETWORK_COUNT == 1 && strlen(WIFI_NETWORKS[0].ssid) == 0) return;
+
+    while (digitalRead(EASE_OLED_BUTTON_PIN) == LOW ||
+           digitalRead(EASE_VENTILATION_BUTTON_PIN) == LOW) delay(10);
+    drawWifiSelection();
+
+    while (true) {
+        if (digitalRead(EASE_OLED_BUTTON_PIN) == LOW) {
+            selectedWifiNetwork = (selectedWifiNetwork + 1) % WIFI_NETWORK_COUNT;
+            drawWifiSelection();
+            while (digitalRead(EASE_OLED_BUTTON_PIN) == LOW) delay(10);
+            delay(EASE_BUTTON_DEBOUNCE_MS);
+        }
+        if (digitalRead(EASE_VENTILATION_BUTTON_PIN) == LOW) {
+            while (digitalRead(EASE_VENTILATION_BUTTON_PIN) == LOW) delay(10);
+            delay(EASE_BUTTON_DEBOUNCE_MS);
+            break;
+        }
+        delay(10);
+    }
+
+    buttonStableState = buttonLastReading = false;
+    ventilationButtonStableState = ventilationButtonLastReading = false;
+    lastButtonChange = lastVentilationButtonChange = millis();
+}
+
 void initializeNetwork() {
     WiFi.setHostname(EASE_HOSTNAME);
-    if (strlen(EASE_WIFI_SSID) == 0) {
+    uint8_t stationMac[6] = {};
+    if (esp_read_mac(stationMac, ESP_MAC_WIFI_STA) == ESP_OK) {
+        Serial.printf("Adresse MAC Wi-Fi (STA): %02X:%02X:%02X:%02X:%02X:%02X\n",
+                      stationMac[0], stationMac[1], stationMac[2],
+                      stationMac[3], stationMac[4], stationMac[5]);
+    } else {
+        Serial.println("Adresse MAC Wi-Fi (STA): lecture impossible");
+    }
+    const WifiNetwork& network = WIFI_NETWORKS[selectedWifiNetwork];
+    if (strlen(network.ssid) == 0) {
         startAccessPoint();
         return;
     }
     WiFi.mode(WIFI_STA);
-    WiFi.begin(EASE_WIFI_SSID, EASE_WIFI_PASSWORD);
+    WiFi.begin(network.ssid, network.password);
     for (uint8_t i = 0; i < 24 && WiFi.status() != WL_CONNECTED; i++) delay(500);
     if (WiFi.status() == WL_CONNECTED) {
         apMode = false;
@@ -979,6 +1083,7 @@ void handleLive() {
     json += ",\"voc\":" + jsonNumber(currentMeasurement.voc, 0);
     json += ",\"hcho\":" + jsonNumber(currentMeasurement.hcho, 1);
     json += ",\"hcho_enabled\":" + String(EASE_WSP2110_ENABLED ? "true" : "false");
+    json += ",\"hcho_available\":" + String(wspOk ? "true" : "false");
     json += ",\"wsp_rs_ratio\":" + jsonNumber(wspRsRatio, 2);
     json += ",\"wsp_adc_v\":" + jsonNumber(wspAdcVoltage, 3);
     json += ",\"pm1\":" + jsonNumber(currentMeasurement.pm1, 0);
@@ -996,6 +1101,7 @@ void handleLive() {
     json += ",\"quality_cause\":\"" + String(qualityCause) + "\"";
     json += ",\"alarm\":" + String(alarmActive ? "true" : "false");
     json += ",\"ventilation_active\":" + String(ventilationActive ? "true" : "false");
+    json += ",\"sound_muted\":" + String(soundMuted ? "true" : "false");
     json += ",\"i2c_hub_ok\":" + String(i2cMuxOk ? "true" : "false");
     json += ",\"rtc_ok\":" + String(rtcOk ? "true" : "false");
     json += ",\"sd_ok\":" + String(sdOk ? "true" : "false");
@@ -1003,7 +1109,7 @@ void handleLive() {
     json += ",\"wifi_rssi\":" + String(apMode ? 0 : WiFi.RSSI());
     json += ",\"ip\":\"" + ip + "\"";
     json += ",\"sensors_ok\":" + String(sensorOkCount());
-    json += ",\"sensors_total\":" + String(SENSOR_TOTAL) + "}";
+    json += ",\"sensors_total\":" + String(sensorTotal()) + "}";
     server.sendHeader("Cache-Control", "no-store");
     server.send(200, "application/json; charset=utf-8", json);
 }
@@ -1140,12 +1246,12 @@ void setup() {
     delay(250);
     pinMode(EASE_BUZZER_PIN, OUTPUT);
     noTone(EASE_BUZZER_PIN);
-    pinMode(EASE_OLED_BUTTON_PIN, INPUT);
-    buttonStableState = digitalRead(EASE_OLED_BUTTON_PIN) == HIGH;
+    pinMode(EASE_OLED_BUTTON_PIN, INPUT_PULLUP);
+    buttonStableState = digitalRead(EASE_OLED_BUTTON_PIN) == LOW;
     buttonLastReading = buttonStableState;
     lastButtonChange = millis();
-    pinMode(EASE_VENTILATION_BUTTON_PIN, INPUT);
-    ventilationButtonStableState = digitalRead(EASE_VENTILATION_BUTTON_PIN) == HIGH;
+    pinMode(EASE_VENTILATION_BUTTON_PIN, INPUT_PULLUP);
+    ventilationButtonStableState = digitalRead(EASE_VENTILATION_BUTTON_PIN) == LOW;
     ventilationButtonLastReading = ventilationButtonStableState;
     lastVentilationButtonChange = millis();
     lastOledActivity = millis();
@@ -1169,6 +1275,7 @@ void setup() {
         while (true) delay(1000);
     }
 
+    selectWifiNetwork();
     initializeClockFromRtc();
     initializeSensors();
     initializeStorage();
@@ -1195,7 +1302,6 @@ void loop() {
         takeSample();
         if (oledAwake) drawOled();
     }
-    serviceOledButton(now);
-    serviceVentilationButton(now);
+    serviceButtons(now);
     delay(2);
 }

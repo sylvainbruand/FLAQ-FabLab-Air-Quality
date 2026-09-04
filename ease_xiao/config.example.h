@@ -23,12 +23,11 @@
 // Broches XIAO ESP32S3.
 #define EASE_BUZZER_PIN D1
 #define EASE_OLED_BUTTON_PIN D7
-#define EASE_VENTILATION_BUTTON_PIN D0
+#define EASE_VENTILATION_BUTTON_PIN D6
 
-// Laisser à 0 tant que le WSP2110 et son pont diviseur ne sont pas installés.
-// Passer à 1 uniquement après avoir réalisé et vérifié le câblage décrit dans
-// CABLAGE.md.
-#define EASE_WSP2110_ENABLED 0
+// Le WSP2110 est optionnel : si D0/A0 reste non connecté ou si sa lecture est
+// invalide, le firmware publie simplement une mesure HCHO indisponible.
+#define EASE_WSP2110_ENABLED 1
 #define EASE_WSP2110_PIN D0
 #define EASE_SD_CS_PIN D2
 #define EASE_SD_SCK_PIN D8
@@ -60,6 +59,9 @@
 #define EASE_WSP2110_VC_VOLTS 5.0f
 // Avec le pont conseillé 10 kΩ (haut) + 20 kΩ (bas), Vadc/Vsortie = 2/3.
 #define EASE_WSP2110_DIVIDER_RATIO 0.6666667f
+// Une entrée libre suit presque entièrement les pull-up/pull-down internes.
+#define EASE_WSP2110_PRESENCE_DELTA_MV 1000UL
+#define EASE_WSP2110_VALID_READINGS 3
 
 // Seuils pédagogiques configurables, dans la plage indicative du WSP2110.
 // Ils ne correspondent pas à des seuils réglementaires certifiés.
