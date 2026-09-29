@@ -1,4 +1,12 @@
 # Local secrets and machine-specific configuration
+# Local archives excluded from the XIAO-only repository
+/flaq_station_test/
+/ease_station_test/
+/modeles_3d/
+/fix_openmodal.py
+/inject_threshold_js.py
+/update_dashboards.py
+
 **/arduino_secrets.h
 **/server_secrets.bat
 **/.env

@@ -1,0 +1,7 @@
+board_manager:
+  additional_urls:
+    - https://espressif.github.io/arduino-esp32/package_esp32_index.json
+directories:
+  data: C:/Users/sylva/Documents/! projet climat/flaq_xiao/.arduino/data
+  downloads: C:/Users/sylva/Documents/! projet climat/flaq_xiao/.arduino/downloads
+  user: C:/Users/sylva/Documents/! projet climat/flaq_xiao/.arduino/user

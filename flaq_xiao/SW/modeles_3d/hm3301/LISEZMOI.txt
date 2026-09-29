@@ -1,0 +1,12 @@
+Modèle d'encombrement Grove HM3301 — Seeed v1.0
+
+Sources :
+https://wiki.seeedstudio.com/Grove-Laser_PM2.5_Sensor-HM3301/
+Archive Eagle officielle conservée dans sources_seeed.zip.
+Fiche HM-3300&3600_V2.1.pdf, dimensions du capteur : 40 x 38 x 15 mm.
+
+Données issues du fichier Eagle : carte 80 x 40 mm, angles R3, quatre trous diamètre 3,2 mm aux coordonnées (+/-36,+/-16) ; trous de fixation capteur diamètre 2,4 mm à (-23,622,-17,018) et (12,573,17,145). Positions des composants et connecteurs issues du PCB.
+
+Hypothèses à vérifier : PCB épaisseur 1,6 mm ; dessous capteur à 3,6 mm du dessous PCB ; hauteurs des connecteurs et composants ; grilles, capot, dégagements et vis simplifiés. Câble souple non représenté. Ne pas utiliser les grilles comme plan de fabrication ou pour une simulation de débit.
+
+Pièce native SolidWorks 2025, fonctions éditables. Unités géométriques : mm (API en mètres). Fichier destiné à l'intégration mécanique ; contrôler les hauteurs sur l'exemplaire physique avant fabrication.

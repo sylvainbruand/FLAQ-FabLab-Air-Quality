@@ -1,0 +1,11 @@
+Grove SCD30 — modèle SolidWorks 2025
+
+Sources :
+https://wiki.seeedstudio.com/Grove-CO2_Temperature_Humidity_Sensor-SCD30/
+https://sensirion.com/media/documents/E9438033/61653143/Sensirion_CO2_Sensors_SCD30_POD_STEP_File.zip
+
+Capteur nu : 25 corps importés du STEP officiel Sensirion, sans modification de forme. Position de montage estimée.
+Carte : contour et perçages issus du package GROVE-60X40MM du fichier Eagle Seeed. Débordements des oreilles compris : environ 64,2 x 44,2 mm, différents des dimensions générales 61 x 42 mm affichées au wiki. Le contour du fichier CAO est retenu. Epaisseur PCB supposée 1,6 mm.
+Capot : contour repris du dessin de sérigraphie Seeed ; hauteur, épaisseur, ouvertures et vis simplifiées/estimées. Hauteur totale fixée à 19 mm selon la fiche générale. Connecteur Grove placé selon Eagle ; hauteur simplifiée.
+
+Pièce mult icorps native SLDPRT : formes importées Sensirion et fonctions éditables pour la carte, le connecteur et le capot. Aucune dépendance externe nécessaire à l'ouverture du SLDPRT. Vérifier les dimensions de votre révision physique avant fabrication d'un boîtier.

@@ -5,8 +5,6 @@ avec une **Seeed Studio XIAO ESP32S3**. La carte acquiert les
 capteurs, affiche les mesures sur OLED, enregistre l’historique sur microSD et
 héberge elle-même un dashboard accessible depuis un téléphone ou un ordinateur.
 
-![Prototype FLAQ XIAO assemblé](20260822_182452.jpg)
-
 ## Fonctions incluses
 
 - actualisation des mesures toutes les 10 secondes ;
@@ -20,11 +18,12 @@ héberge elle-même un dashboard accessible depuis un téléphone ou un ordinate
 - horodatage par RTC Grove PCF85063 ;
 - correction NTP automatique lorsque le réseau donne accès à Internet ;
 - point d’accès `FLAQ-XIAO` si aucun Wi-Fi n’est configuré ou disponible ;
-- reprise de l’historique des dernières 24 heures après redémarrage ;
+- reprise de l’historique des dernières 24 heures après redémarrage.
 - navigation manuelle entre les quatre pages OLED avec le bouton Grove ;
-- extinction de l’OLED après 20 secondes sans appui et réveil automatique ;
+- extinction de l’OLED après 20 secondes sans appui et réveil automatique.
 - déclaration manuelle d’une ventilation avec un second bouton Grove ;
-- signalement de la ventilation sur le dashboard ;
+- mode mute basculé en appuyant sur les deux boutons en même temps ;
+- signalement de la ventilation sur le dashboard et éclaircissement des graphes.
 - bandes temporelles claires sur les graphes pendant les périodes ventilées.
 
 ## Matériel
@@ -41,12 +40,10 @@ héberge elle-même un dashboard accessible depuis un téléphone ou un ordinate
 | Horloge | RTC Grove PCF85063 | I²C `0x51` |
 | Affichage | OLED SSD1306 128×64 | I²C `0x3C` |
 | Alarme | Grove Passive Buzzer 107020109 | `D1` |
-| Navigation OLED | Grove Button (P) 111020000 | port `D7 / UART` |
-| Ventilation | Grove Button (P) 111020000 | port `D0 / A0` |
+| Navigation OLED + ventilation | Grove Dual Button | port `D7 / UART` (`D7` + `D6`) |
 | Stockage | Adafruit MicroSD Breakout+ 254 | SPI, CS sur `D2` |
 
-Le câblage détaillé se trouve dans
-[flaq_xiao/CABLAGE.md](flaq_xiao/CABLAGE.md).
+Le câblage détaillé se trouve dans [CABLAGE.md](CABLAGE.md).
 
 Au démarrage, le firmware ouvre automatiquement les huit canaux du TCA9548A.
 Cette configuration est possible car chaque capteur utilise une adresse I²C
@@ -83,8 +80,15 @@ réseau, ouvrir `http://192.168.4.1`.
 Pour connecter la station au réseau local :
 
 1. copier `config.h.example` sous le nom `config.h` ;
-2. renseigner le nom et le mot de passe Wi-Fi ;
+2. renseigner les noms et mots de passe des réseaux Wi-Fi dans
+   `FLAQ_WIFI_NETWORKS` (une ligne par réseau) ;
 3. téléverser à nouveau le programme.
+
+Au démarrage, l’OLED affiche la liste configurée. Le bouton sur D7 passe au
+réseau suivant et le bouton sur D6 valide le réseau affiché. Après la
+validation, les deux boutons reprennent automatiquement leur fonctionnement
+normal (pages OLED et ventilation). Si la connexion choisie échoue, la station
+crée comme auparavant le point d’accès `FLAQ-XIAO`.
 
 Le dashboard devient alors accessible à l’adresse IP affichée sur l’OLED et,
 si le réseau l’autorise, à `http://flaq-xiao.local`.
@@ -121,10 +125,10 @@ intérieur ; ils ne remplacent pas un dispositif réglementaire ou certifié.
 
 ## Particularités du WSP2110
 
-Le WSP2110 est désactivé par défaut avec `FLAQ_WSP2110_ENABLED 0`. Dans cet
-état, D0 n'est pas lu, le dashboard affiche « non installé », le HCHO est
-ignoré par l'indice et aucune alerte HCHO n'est créée. Quand le capteur et son
-pont diviseur sont prêts, définir `FLAQ_WSP2110_ENABLED 1` dans `config.h`.
+Le WSP2110 est lu sur D0 mais reste optionnel. S’il n’est pas branché, ou tant
+qu’aucune lecture valide n’est détectée, le dashboard affiche « indisponible »,
+le HCHO est ignoré par l’indice et aucune alerte HCHO n’est créée. Cette absence
+n’empêche ni le démarrage ni le fonctionnement des autres capteurs.
 
 Le WSP2110 est un capteur MOS sensible à plusieurs gaz et solvants. La valeur
 « HCHO estimé » en ppm sert donc à suivre une tendance après étalonnage ; ce
@@ -133,8 +137,8 @@ au moins 120 heures de préchauffage avant son étalonnage initial.
 
 Le module Grove fonctionne en 5 V alors que l’entrée analogique du XIAO est en
 3,3 V. Sa sortie doit obligatoirement passer par le pont 10 kΩ / 20 kΩ décrit
-dans `flaq_xiao/CABLAGE.md`. La constante `FLAQ_WSP2110_R0_RATIO` doit ensuite
-être ajustée dans `config.h` avec la valeur obtenue en air propre stabilisé. Le
+dans `CABLAGE.md`. La constante `FLAQ_WSP2110_R0_RATIO` doit ensuite être
+ajustée dans `config.h` avec la valeur obtenue en air propre stabilisé. Le
 moniteur série affiche `WSP_Rs` et `ADC` pour faciliter cette opération.
 
 ## API embarquée
@@ -149,15 +153,12 @@ moniteur série affiche `WSP_Rs` et `ADC` pour faciliter cette opération.
 | `/api/events.csv` | téléchargement CSV |
 | `/api/health` | mémoire et disponibilité du serveur |
 
-## Organisation du dépôt
+## Fichiers du projet
 
-- [`flaq_xiao/`](flaq_xiao/) : station autonome XIAO ESP32S3 ;
-
-## Fichiers du projet XIAO
-
-- `flaq_xiao/flaq_xiao.ino` : firmware complet ;
-- `flaq_xiao/dashboard.h` : interface web embarquée sans dépendance Internet ;
-- `flaq_xiao/config.example.h` : valeurs par défaut et seuils ;
-- `flaq_xiao/config.h.example` : modèle de configuration Wi-Fi ;
-- `flaq_xiao/CABLAGE.md` : raccordement pas à pas ;
-- `flaq_xiao/VERIFICATION.md` : procédure de mise en service.
+- `flaq_xiao.ino` : firmware complet ;
+- `dashboard.h` : interface web embarquée sans dépendance Internet ;
+- `flaq_logo.png` et `flaq_logo.h` : logo optimisé et ressource embarquée ;
+- `config.example.h` : valeurs par défaut et seuils ;
+- `config.h.example` : modèle de configuration Wi-Fi ;
+- `CABLAGE.md` : raccordement pas à pas ;
+- `VERIFICATION.md` : procédure de mise en service.
