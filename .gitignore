@@ -51,3 +51,6 @@ station_complete_lora_no_python/
 **/Thumbs.db
 **/.DS_Store
 Desktop.ini
+
+# Local Arduino tools kept outside sketch folders
+/.arduino/
