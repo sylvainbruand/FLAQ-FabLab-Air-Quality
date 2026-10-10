@@ -102,5 +102,5 @@ réglementaire ou comme dispositif de sécurité.
 - **un capteur manque** : débrancher temporairement les autres branches du hub
   et vérifier le capteur seul avec un scanner I²C.
 - **WSP2110 absent ou valeur incohérente** : contrôler son alimentation 5 V, la
-  masse commune, le pont 10 kΩ / 20 kΩ et les valeurs `ADC`/`WSP_Rs` du moniteur
+  masse commune, le pont 15 kΩ / 20 kΩ et les valeurs `ADC`/`WSP_Rs` du moniteur
   série ; ce capteur n’apparaît pas dans un scanner I²C.

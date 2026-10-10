@@ -134,7 +134,7 @@ n’est pas une mesure sélective ou certifiée du formaldéhyde. Le capteur dem
 au moins 120 heures de préchauffage avant son étalonnage initial.
 
 Le module Grove fonctionne en 5 V alors que l’entrée analogique du XIAO est en
-3,3 V. Sa sortie doit obligatoirement passer par le pont 10 kΩ / 20 kΩ décrit
+3,3 V. Sa sortie doit obligatoirement passer par le pont 15 kΩ / 20 kΩ décrit
 dans `flaq_xiao/CABLAGE.md`. La constante `FLAQ_WSP2110_R0_RATIO` doit ensuite
 être ajustée dans `config.h` avec la valeur obtenue en air propre stabilisé. Le
 moniteur série affiche `WSP_Rs` et `ADC` pour faciliter cette opération.

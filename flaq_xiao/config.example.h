@@ -57,8 +57,8 @@
 // Le module doit être étalonné individuellement après au moins 120 h de chauffe.
 #define FLAQ_WSP2110_R0_RATIO 34.28f
 #define FLAQ_WSP2110_VC_VOLTS 5.0f
-// Avec le pont conseillé 10 kΩ (haut) + 20 kΩ (bas), Vadc/Vsortie = 2/3.
-#define FLAQ_WSP2110_DIVIDER_RATIO 0.6666667f
+// Avec le pont conseillé 15 kΩ (haut) + 20 kΩ (bas), Vadc/Vsortie = 4/7.
+#define FLAQ_WSP2110_DIVIDER_RATIO 0.5714286f
 // Une entrée libre suit presque entièrement les pull-up/pull-down internes.
 #define FLAQ_WSP2110_PRESENCE_DELTA_MV 1000UL
 #define FLAQ_WSP2110_VALID_READINGS 3

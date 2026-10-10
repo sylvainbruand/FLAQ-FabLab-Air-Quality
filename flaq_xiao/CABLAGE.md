@@ -53,20 +53,32 @@ Le WSP2110 n’est pas raccordé au hub I²C. Alimenter son module Grove en 5 V 
 relier toutes les masses. Sa sortie analogique peut dépasser 3,3 V : ne jamais
 la brancher directement sur `D0` du XIAO.
 
-Réaliser ce pont diviseur :
+Réaliser ce pont diviseur avec des résistances à 1 % :
 
 ```text
-Sortie SIG du WSP2110 ── 10 kΩ ──┬── D0 du XIAO
-                                  │
-                                 20 kΩ
-                                  │
-                                 GND
+Sortie SIG du WSP2110 ── 15 kΩ ──┬── D0 du XIAO
+                               │
+                               ├── 20 kΩ ── GND
+                               │
+                               └── 100 nF ─ GND
 ```
 
-Ajouter de préférence un condensateur céramique de 100 nF entre `D0` et GND,
-au plus près du XIAO. Le rapport du pont est alors 2/3, valeur déjà définie par
-`FLAQ_WSP2110_DIVIDER_RATIO`. Vérifier au multimètre que D0 reste toujours sous
-3,3 V avant de le connecter à la carte.
+Le condensateur céramique de 100 nF est conseillé **en parallèle de la résistance
+de 20 kΩ** : ses deux pattes se raccordent aux mêmes points, `D0` et GND. Il
+n’a pas de polarité. Le placer au plus près de D0, avec des connexions courtes.
+Avec les résistances, il forme un filtre qui atténue les parasites électriques
+rapides des fils et de l’alimentation, pour stabiliser la mesure tout en
+conservant les variations lentes utiles du capteur. Il ne protège pas contre
+une surtension permanente.
+
+Le rapport du pont est `Vadc / Vsortie = 20 / (15 + 20) = 4/7`, soit environ
+`0.5714286`, valeur définie par `FLAQ_WSP2110_DIVIDER_RATIO` dans
+`config.example.h`. Reporter cette valeur dans votre `config.h` si nécessaire.
+Une sortie de 5 V donne ainsi environ 2,86 V sur D0. L’ancien pont 10 kΩ / 20 kΩ
+donnait déjà 3,33 V pour 5 V, sans marge pour une entrée limitée à 3,3 V.
+Vérifier au multimètre que D0 reste toujours sous 3,3 V avant de le connecter
+à la carte. Si le pont d’un montage existant est remplacé, mettre aussi à jour
+le rapport dans le firmware et refaire l’étalonnage du capteur.
 
 Le firmware accepte que le WSP2110 ne soit pas installé : D0 peut rester non
 connecté, le démarrage continue normalement et la valeur HCHO reste indiquée
