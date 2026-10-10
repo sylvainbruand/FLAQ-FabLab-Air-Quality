@@ -1,0 +1,9 @@
+﻿Grove OLED Yellow & Blue 0,96 pouces SSD1315 — 104020249
+Pièce native SolidWorks 2025 multicorps, mm, écran représenté éteint.
+Remplace le précédent modèle de la référence monochrome 104020208. PCB spécifique 104020249 : connecteur et électronique au-dessous, 7 contacts SPI à droite, écran décalé vers la gauche.
+Source officielle Eagle étiquetée V1.0. L'utilisateur signale V1.1 : différences de révision non vérifiées. Ne pas considérer le modèle comme certifié conforme à cette révision.
+Contour et perçages issus du PCB officiel : nominal 40 x 20 mm hors oreilles, 3 fixations diamètre 2,2 mm, 7 trous SPI diamètre 1,0922 mm. PCB supposé épais de 1,6 mm.
+Dalle 24,74 x 16,9 x 1,42 mm, zone active 21,74 x 10,86 mm selon fiche publiée. Support de dalle supposé 1 mm ; connecteur sous PCB supposé haut de 8,4 mm. Nappe, soudures et composants simplifiés ; sérigraphie et pistes omises. Hauteurs à contrôler avant fabrication ajustée.
+Sources :
+https://www.seeedstudio.com/Grove-OLED-Yellow-Blue-Display-0-96-SSD1315-V1-0-p-5010.html
+https://wiki.seeedstudio.com/Grove-OLED-Yellow%26Blue-Display-0.96-SSD1315_V1.0/

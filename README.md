@@ -5,7 +5,9 @@ avec une **Seeed Studio XIAO ESP32S3**. La carte acquiert les
 capteurs, affiche les mesures sur OLED, enregistre l’historique sur microSD et
 héberge elle-même un dashboard accessible depuis un téléphone ou un ordinateur.
 
-![Prototype FLAQ XIAO assemblé](20260822_182452.jpg)
+![Prototype FLAQ XIAO assemblé](FLAQ.png)
+
+[▶ Voir la vidéo de présentation FLAQ](FLAQ.mp4) — version MP4 de `FLAQ.avi`.
 
 ## Fonctions incluses
 
@@ -161,3 +163,9 @@ moniteur série affiche `WSP_Rs` et `ADC` pour faciliter cette opération.
 - `flaq_xiao/config.h.example` : modèle de configuration Wi-Fi ;
 - `flaq_xiao/CABLAGE.md` : raccordement pas à pas ;
 - `flaq_xiao/VERIFICATION.md` : procédure de mise en service.
+
+## Vues du projet FLAQ
+
+![FLAQ — vue 1](FLAQ-1.png)
+
+![FLAQ — vue 2](FLAQ-2.png)

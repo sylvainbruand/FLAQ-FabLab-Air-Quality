@@ -1,0 +1,10 @@
+﻿Grove OLED 0,96 pouces SSD1315 — MODELE PROVISOIRE
+Demande : carte marquée v1.1. Source officielle disponible : Eagle étiqueté v1.0. Aucune équivalence mécanique v1.0/v1.1 confirmée. Ce fichier ne constitue PAS un modèle vérifié de la v1.1.
+Pièce native SolidWorks 2025 multicorps, mm.
+Contour PCB et implantation repris du fichier Eagle v1.0 : carte nominale 40 x 20 mm hors oreilles, 3 fixations diamètre 2,2 mm. Epaisseur supposée 1,6 mm.
+Dalle 24,74 x 16,9 x 1,42 mm et zone active 21,74 x 10,86 mm selon la fiche écran publiée par Seeed. Support de dalle supposé 1 mm ; nappe repliée simplifiée. Connecteur vertical supposé haut de 8,4 mm au-dessus du PCB. Petits composants et soudures simplifiés. Pistes, sérigraphie et contacts cachés sous écran omis.
+Avant de réaliser une façade ou un boîtier ajusté, comparer contour, trous et hauteur d'écran avec le module v1.1 réel. Une photo recto/verso et les dimensions mesurées permettront de vérifier ou corriger ce modèle.
+Sources :
+https://wiki.seeedstudio.com/Grove-OLED-Display-0.96-SSD1315/
+https://files.seeedstudio.com/wiki/Grove-OLED-Display-0.96-SSD1315-/res/Grove%20-%20OLED%20Display%200.96%20(SSD1315)_v1.0.zip
+https://files.seeedstudio.com/wiki/Grove-OLED-Display-0.96-SSD1315-/res/OEL%20Display%20Module.pdf

@@ -1,0 +1,10 @@
+﻿Grove HCHO Sensor — Seeed Studio 101020001
+Pièce native SolidWorks 2025 multicorps, unités mm.
+Contour du PCB, 2 fixations diamètre 2,2 mm, perçages et implantation issus du fichier Eagle officiel. Un seul module extrait du panneau. Corps PCB 20 x 20 mm, oreilles comprises 20 x 24,2 mm. Epaisseur supposée 1,6 mm.
+WSP2110 : diamètre embase 9,4 mm, corps 8 mm, hauteur 7 mm selon manuel Winsen v1.3. Espace sous capteur supposé 0,2 mm. Grille, couronne et structure intérieure simplifiées.
+Potentiomètre : empreinte 6,8 x 7 mm selon Eagle ; hauteur supposée 4,5 mm, réglage simplifié. Connecteur vertical : hauteur supposée 8,4 mm. Petits composants, soudures et pattes simplifiés ; pistes et sérigraphie omises.
+Modèle pour implantation préliminaire ; vérifier les hauteurs sur votre exemplaire avant fabrication ajustée.
+Sources :
+https://wiki.seeedstudio.com/Grove-HCHO_Sensor/
+https://files.seeedstudio.com/wiki/Grove-HCHO_Sensor/res/Grove-HCHO_Sensor_Eagle_File.zip
+https://files.seeedstudio.com/wiki/Grove-HCHO_Sensor/res/Wsp2110-1-.pdf

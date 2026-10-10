@@ -1,0 +1,13 @@
+Grove RTC PCF85063TP 102020083 — modèle SolidWorks 2025
+
+Sources officielles :
+https://wiki.seeedstudio.com/Grove_High_Precision_RTC/
+https://files.seeedstudio.com/wiki/Grove-High_Precision_RTC/res/sch_eagle.zip
+
+Contour du PCB nominal 40 x 20 mm, oreilles, encoches et trois perçages diamètre 2,2 mm issus du fichier Eagle (package U$5, rotation R180, décalage x=1,27). Les positions des composants et leurs pastilles sont également issues du fichier Eagle. Les autres cartes du panneau de fabrication ne sont pas modélisées.
+
+Support de pile vide : empreinte BAT2P-SMD-16.4-CR1220, compatible CR1220/CR1225 selon la description Eagle. Hauteur de référence 4,1 mm issue de la valeur du composant. Forme intérieure, contacts et lame ressort simplifiés ; aucune pile fournie dans le modèle.
+
+Hypothèses : PCB épaisseur 1,6 mm ; connecteur vertical hauteur 8,4 mm au-dessus du PCB, détails intérieurs simplifiés. Hauteurs des passifs simplifiées. Câble et sérigraphie non représentés.
+
+Modèle d'encombrement avec fonctions éditables. Vérifier les hauteurs et le support de pile sur l'exemplaire réel avant fabrication d'un boîtier.

@@ -1,0 +1,12 @@
+Grove Passive Buzzer 107020109 — modèle SolidWorks 2025
+
+Sources :
+https://wiki.seeedstudio.com/Grove-Passive-Buzzer/
+https://files.seeedstudio.com/products/107020109/document/Grove_Passive_Buzzer_eagle.zip
+https://files.seeedstudio.com/products/107020109/document/MLT_8530_datasheet.pdf
+
+Contour PCB, trous diamètre 2,2 mm (entraxe 20 mm), positions des composants et pastilles : fichier Eagle Seeed officiel, rotation du package U2 respectée. Les traits dupliqués ont été supprimés. Corps du buzzer : 8,5 x 8,5 x 3 mm, coins coupés selon le plan MLT-8530.
+
+Hypothèses : épaisseur PCB 1,6 mm, hauteur connecteur 8,4 mm au-dessus PCB pour un total de 10 mm. Cavité, détrompeurs et contacts du connecteur simplifiés ; dimensions du port acoustique latéral estimées. Hauteur des petits composants et soudures simplifiée. Câble et sérigraphie non représentés.
+
+Pièce mult icorps avec fonctions éditables. Modèle destiné à l'encombrement et à l'intégration mécanique, pas à la fabrication du composant. Vérifier les hauteurs sur l'exemplaire physique avant usinage d'un boîtier.

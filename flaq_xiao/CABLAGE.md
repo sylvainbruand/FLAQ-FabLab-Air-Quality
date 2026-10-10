@@ -108,3 +108,17 @@ L’Adafruit 254 réalise l’adaptation nécessaire pour la microSD.
 - éloigner le WSP2110 des vapeurs de solvants et garder son module sous tension
   au moins 120 heures avant l’étalonnage initial ;
 - conserver le buzzer et l’OLED hors du trajet principal de l’air.
+
+## Photos du montage des composants
+
+![Montage des composants — photo 1](../photos%20pour%20montage%20composants/Montage_1.jpg)
+
+![Montage des composants — photo 2](../photos%20pour%20montage%20composants/Montage_2.jpg)
+
+![Montage des composants — photo 3](../photos%20pour%20montage%20composants/montage_3.jpg)
+
+![Montage des composants — photo 4](../photos%20pour%20montage%20composants/Montage_4.jpg)
+
+![Montage des composants — photo 5](../photos%20pour%20montage%20composants/montage_5.jpg)
+
+![Montage des composants — photo 6](../photos%20pour%20montage%20composants/Montage_6.jpg)

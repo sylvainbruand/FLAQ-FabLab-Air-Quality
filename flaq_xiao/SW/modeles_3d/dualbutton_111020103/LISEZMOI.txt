@@ -1,0 +1,10 @@
+﻿Grove Dual Button — Seeed Studio 111020103
+Pièce native SolidWorks 2025 multicorps, mm.
+Contour, trois fixations diamètre 2,2 mm et implantation issus du PCB Eagle officiel v1.0. Carte nominale 40 x 20 mm hors oreilles ; épaisseur supposée 1,6 mm.
+Boutons : corps 12 x 12 mm, entraxe 19,05 mm et hauteur nominale sans capuchon 7,5 mm selon l'empreinte. Formes internes simplifiées.
+Capuchons vert et rouge estimés : diamètre principal 11,2 mm, bord 12,2 mm, sommet à 11,5 mm depuis la face inférieure du PCB. Boutons représentés au repos ; course non modélisée.
+Connecteur Grove horizontal et composants au-dessous du PCB. Hauteur sous PCB supposée 5,1 mm. Connecteur, soudures et petits composants simplifiés ; pistes, sérigraphie et points de test omis.
+Encombrement total en épaisseur estimé 16,6 mm. Pour une façade ajustée, mesurer les capuchons et la hauteur réelle sur votre module.
+Sources :
+https://wiki.seeedstudio.com/Grove-Dual-Button/
+https://files.seeedstudio.com/products/111020103/document/Grove-Dual-Button_eagle_file.zip

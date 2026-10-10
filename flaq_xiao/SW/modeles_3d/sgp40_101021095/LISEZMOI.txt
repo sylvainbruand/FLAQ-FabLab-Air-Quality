@@ -1,0 +1,10 @@
+﻿Grove VOC Gas Sensor SGP40 — Seeed Studio 101021095
+Pièce native SolidWorks 2025, multicorps, dimensions en mm.
+Contour PCB, 3 perçages de fixation diamètre 2,2 mm, découpe thermique et positions des composants : fichier Eagle officiel v1.0.
+SGP40 : boîtier 2,44 x 2,44 x 0,85 mm, ouverture diamètre 0,8 mm, selon fiche Sensirion.
+Simplifications : épaisseur PCB supposée 1,6 mm ; connecteur horizontal Grove (hauteur supposée 5,1 mm), composants annexes et soudures simplifiés ; profondeur/position exacte de la cavité du capteur estimées ; sérigraphie, pistes et pastilles de test arrière omises.
+Usage : représentation et implantation mécanique préliminaire. Vérifier les hauteurs sur un exemplaire réel avant fabrication d'un boîtier ajusté.
+Sources :
+https://wiki.seeedstudio.com/grove_voc_gas_sensor_sgp40/
+https://files.seeedstudio.com/wiki/Grove_SGP40/Grove-VOC_Gas_Sensor(SGP40).zip
+https://files.seeedstudio.com/wiki/Grove_SGP40/Sensirion_Gas_Sensors_Datasheet_SGP40.pdf

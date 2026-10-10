@@ -1,0 +1,10 @@
+﻿Grove Temperature & Humidity Sensor DHT20 — Seeed Studio 101020932
+Pièce native SolidWorks 2025 multicorps, mm.
+PCB : contour, perçages et positions issus du fichier officiel Eagle V2.1. Corps nominal 40 x 20 mm, oreilles comprises 42,1 x 24,2 mm. Fixations diamètre 2,2 mm. Epaisseur supposée 1,6 mm.
+DHT20 : enveloppe 16,1 x 12,6 x 5,8 mm et pas des pattes 2,54 mm selon fiche Aosong. Position XY selon Eagle. Espace sous capteur supposé 0,2 mm. Grille, cavité et pliage des pattes simplifiés.
+Connecteur Grove vertical selon implantation Eagle, hauteur supposée 8,4 mm. Petits composants et soudures simplifiés ; pistes, sérigraphie et pastilles arrière omises.
+Modèle d'implantation préliminaire. Vérifier les dimensions et la révision physique avant fabrication d'un boîtier ajusté.
+Sources :
+https://wiki.seeedstudio.com/Grove-Temperature-Humidity-Sensor-DH20/
+https://files.seeedstudio.com/wiki/Grove-Temperature-Humidity-Sensor/Grove-Temperature&Humidity-Sensor-V2.1.zip
+https://files.seeedstudio.com/products/101020932/DHT20-Product-Manual.pdf

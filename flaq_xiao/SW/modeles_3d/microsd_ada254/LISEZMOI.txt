@@ -1,0 +1,8 @@
+﻿Adafruit MicroSD card breakout board+ — ADA254 / Product ID 254
+Pièce native SolidWorks 2025 multicorps, unités mm.
+PCB : 31,75 x 25,4 mm, rayons 1,905 mm ; 4 fixations diamètre 2,2 mm, entraxes 20,32 x 20,32 mm. Contour, perçages et positions issus du fichier Eagle officiel Adafruit. Epaisseur supposée 1,6 mm.
+Module sans carte microSD et sans barrette mâle (livrée non soudée).
+Logement microSD : implantation et emprise selon Eagle, hauteur supposée 2,4 mm au-dessus du PCB. Forme de coque, fenêtres, contacts et mécanisme push-push simplifiés. Hauteurs des composants estimées d'après leurs boîtiers usuels. Pistes et sérigraphie omises. Vérifier les hauteurs sur un exemplaire réel avant fabrication ajustée.
+Source : https://github.com/adafruit/MicroSD-breakout-board
+Conception originale : Limor Fried/Ladyada pour Adafruit Industries. Modèle 3D dérivé fourni sous CC BY-SA, voir LICENSE_Adafruit.txt et README_Adafruit.md (texte original conservé).
+https://learn.adafruit.com/adafruit-micro-sd-breakout-board-card-tutorial/download
